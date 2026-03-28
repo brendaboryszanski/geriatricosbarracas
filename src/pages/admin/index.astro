@@ -1,0 +1,33 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+
+const sections = [
+  { href: '/admin/slider', label: 'Fotos principales', desc: 'Las imágenes del carrusel de inicio', icon: '🖼️' },
+  { href: '/admin/residencias', label: 'Residencias', desc: 'Información de Le-Sa y Rincón del Sur', icon: '🏡' },
+  { href: '/admin/servicios', label: 'Servicios', desc: 'Los 6 servicios que ofrecen', icon: '🩺' },
+  { href: '/admin/actividades', label: 'Actividades', desc: 'Fiestas, espectáculos y talleres', icon: '🎨' },
+  { href: '/admin/galeria', label: 'Galería de fotos', desc: 'Fotos de ambas residencias y momentos', icon: '📷' },
+  { href: '/admin/equipo', label: 'Equipo', desc: 'Los miembros del equipo profesional', icon: '👥' },
+  { href: '/admin/objetivos', label: 'Objetivos', desc: 'Para residentes y familiares', icon: '🎯' },
+  { href: '/admin/contacto', label: 'Contacto', desc: 'Teléfonos, email y mapa', icon: '📞' },
+];
+---
+
+<AdminLayout title="Inicio" activeSection="dashboard">
+  <div class="mb-8">
+    <h2 class="font-heading font-800 text-2xl text-sage">¡Bienvenida!</h2>
+    <p class="text-warm-gray mt-1">Desde acá podés editar cualquier parte del sitio web.</p>
+  </div>
+
+  <div class="grid sm:grid-cols-2 gap-4">
+    {sections.map((s) => (
+      <a href={s.href} class="bg-white rounded-2xl p-5 border border-warm-border hover:border-sage hover:shadow-md transition-all flex items-start gap-4">
+        <span class="text-3xl">{s.icon}</span>
+        <div>
+          <h3 class="font-heading font-700 text-sage">{s.label}</h3>
+          <p class="text-warm-gray text-sm">{s.desc}</p>
+        </div>
+      </a>
+    ))}
+  </div>
+</AdminLayout>

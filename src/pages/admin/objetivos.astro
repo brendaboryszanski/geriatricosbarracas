@@ -1,0 +1,61 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { supabase } from '../../lib/supabase';
+
+let successMsg = '';
+let errorMsg = '';
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const id = form.get('id') as string;
+  const title = form.get('title') as string;
+  const description = form.get('description') as string;
+
+  const { error } = await supabase.from('objectives').update({ title, description }).eq('id', id);
+  if (error) errorMsg = 'Error al guardar.';
+  else successMsg = 'Guardado correctamente.';
+}
+
+const { data: objectives } = await supabase
+  .from('objectives')
+  .select('*')
+  .order('id');
+
+const targetLabel: Record<string, string> = {
+  residentes: 'Para residentes',
+  familiares: 'Para familiares',
+};
+---
+
+<AdminLayout title="Objetivos" activeSection="objetivos">
+  <h2 class="font-heading font-800 text-2xl text-sage mb-1">Objetivos</h2>
+  <p class="text-warm-gray text-sm mb-8">Editá los objetivos de la sección.</p>
+
+  {successMsg && <div class="bg-green-50 border border-green-200 text-green-700 rounded-xl px-4 py-3 text-sm mb-6">{successMsg}</div>}
+  {errorMsg && <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm mb-6">{errorMsg}</div>}
+
+  <div class="grid sm:grid-cols-2 gap-5">
+    {objectives?.map((obj) => (
+      <form method="POST" class="bg-white rounded-2xl border border-warm-border p-5 flex flex-col gap-3">
+        <input type="hidden" name="id" value={obj.id} />
+
+        <div class="text-xs font-medium text-terracotta uppercase tracking-wider">
+          {targetLabel[obj.target] ?? obj.target}
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <label class="text-sm font-medium text-warm-dark">Título</label>
+          <input name="title" value={obj.title} class="border border-warm-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-sage" />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-sm font-medium text-warm-dark">Descripción</label>
+          <textarea name="description" rows="4" class="border border-warm-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-sage resize-none">{obj.description}</textarea>
+        </div>
+
+        <button type="submit" class="self-start bg-sage hover:bg-sage-dark text-white px-5 py-2 rounded-xl text-sm font-medium transition-colors">
+          Guardar
+        </button>
+      </form>
+    ))}
+  </div>
+</AdminLayout>

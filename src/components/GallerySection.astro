@@ -1,0 +1,89 @@
+---
+interface Photo {
+  title: string;
+  image_url: string;
+  category: 'Momentos' | 'Lesa' | 'Rincon';
+}
+
+interface Props {
+  photos: Photo[];
+}
+
+const { photos } = Astro.props;
+
+const filters = [
+  { label: 'Todas', value: 'all' },
+  { label: 'Le-Sa', value: 'Lesa' },
+  { label: 'Rincón del Sur', value: 'Rincon' },
+  { label: 'Momentos', value: 'Momentos' },
+];
+---
+
+<section id="fotos" class="bg-blush py-20 px-4">
+  <div class="max-w-6xl mx-auto">
+    <div class="text-center mb-10">
+      <h2 class="font-heading font-800 text-3xl md:text-4xl text-sage mb-3">Mirá las residencias desde adentro</h2>
+      <p class="text-warm-gray text-lg max-w-xl mx-auto">Espacios cálidos pensados para sentirse en casa.</p>
+    </div>
+
+    <!-- Filter buttons -->
+    <div class="flex flex-wrap justify-center gap-2 mb-8">
+      {filters.map((f) => (
+        <button
+          data-filter={f.value}
+          class={`gallery-filter px-5 py-2 rounded-full text-sm font-medium border transition-all ${f.value === 'all' ? 'bg-sage text-white border-sage' : 'bg-white text-warm-gray border-warm-border hover:border-sage hover:text-sage'}`}
+        >
+          {f.label}
+        </button>
+      ))}
+    </div>
+
+    <!-- Grid -->
+    <div id="gallery-grid" class="columns-2 sm:columns-3 lg:columns-4 gap-3 space-y-3">
+      {photos.map((p) => (
+        <div
+          class="gallery-item break-inside-avoid rounded-xl overflow-hidden cursor-pointer group"
+          data-category={p.category}
+        >
+          <div class="relative">
+            <img
+              src={p.image_url}
+              alt={p.title}
+              loading="lazy"
+              class="w-full object-cover group-hover:scale-105 transition-transform duration-300"
+            />
+            <div class="absolute inset-0 bg-warm-dark/0 group-hover:bg-warm-dark/40 transition-colors flex items-end">
+              <p class="text-white text-xs font-medium px-3 pb-2 opacity-0 group-hover:opacity-100 transition-opacity">{p.title}</p>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<script is:inline>
+  document.querySelectorAll('.gallery-filter').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const filter = btn.getAttribute('data-filter');
+
+      // Update active button style
+      document.querySelectorAll('.gallery-filter').forEach(b => {
+        b.classList.remove('bg-sage', 'text-white', 'border-sage');
+        b.classList.add('bg-white', 'text-warm-gray', 'border-warm-border');
+      });
+      btn.classList.add('bg-sage', 'text-white', 'border-sage');
+      btn.classList.remove('bg-white', 'text-warm-gray', 'border-warm-border');
+
+      // Filter items
+      document.querySelectorAll('.gallery-item').forEach(item => {
+        const cat = item.getAttribute('data-category');
+        if (filter === 'all' || cat === filter) {
+          item.classList.remove('hidden');
+        } else {
+          item.classList.add('hidden');
+        }
+      });
+    });
+  });
+</script>

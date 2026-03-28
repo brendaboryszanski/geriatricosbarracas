@@ -1,0 +1,78 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { supabase } from '../../lib/supabase';
+
+let successMsg = '';
+let errorMsg = '';
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const action = form.get('action') as string;
+
+  if (action === 'update') {
+    const id = form.get('id') as string;
+    const caption = form.get('caption') as string;
+    const file = form.get('file') as File;
+    let image_url: string | undefined;
+
+    if (file && file.size > 0) {
+      const filename = `slider/${Date.now()}-${file.name.replace(/\s/g, '-')}`;
+      const { error: uploadError } = await supabase.storage
+        .from('images')
+        .upload(filename, file, { contentType: file.type });
+
+      if (!uploadError) {
+        const { data: { publicUrl } } = supabase.storage.from('images').getPublicUrl(filename);
+        image_url = publicUrl;
+      }
+    }
+
+    const updateData: Record<string, unknown> = { caption };
+    if (image_url) updateData.image_url = image_url;
+
+    const { error } = await supabase.from('slider').update(updateData).eq('id', id);
+    if (error) errorMsg = 'Error al guardar.';
+    else successMsg = 'Guardado correctamente.';
+  }
+}
+
+const { data: slides } = await supabase
+  .from('slider')
+  .select('*')
+  .order('order');
+---
+
+<AdminLayout title="Fotos principales" activeSection="slider">
+  <h2 class="font-heading font-800 text-2xl text-sage mb-1">Fotos principales</h2>
+  <p class="text-warm-gray text-sm mb-8">Las imágenes del carrusel que aparecen al ingresar al sitio.</p>
+
+  {successMsg && <div class="bg-green-50 border border-green-200 text-green-700 rounded-xl px-4 py-3 text-sm mb-6">{successMsg}</div>}
+  {errorMsg && <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm mb-6">{errorMsg}</div>}
+
+  <div class="grid sm:grid-cols-2 gap-5">
+    {slides?.map((slide) => (
+      <form method="POST" enctype="multipart/form-data" class="bg-white rounded-2xl border border-warm-border overflow-hidden">
+        <input type="hidden" name="action" value="update" />
+        <input type="hidden" name="id" value={slide.id} />
+
+        <img src={slide.image_url} alt={slide.caption} class="w-full h-44 object-cover" />
+
+        <div class="p-4 flex flex-col gap-3">
+          <div class="flex flex-col gap-1">
+            <label class="text-sm font-medium text-warm-dark">Texto sobre la imagen</label>
+            <input name="caption" value={slide.caption} class="border border-warm-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-sage" />
+          </div>
+
+          <div class="flex flex-col gap-1">
+            <label class="text-sm font-medium text-warm-dark text-xs">Reemplazar imagen (opcional)</label>
+            <input type="file" name="file" accept="image/*" class="text-xs file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-sage/10 file:text-sage file:text-xs" />
+          </div>
+
+          <button type="submit" class="self-start bg-sage hover:bg-sage-dark text-white px-5 py-2 rounded-xl text-sm font-medium transition-colors">
+            Guardar
+          </button>
+        </div>
+      </form>
+    ))}
+  </div>
+</AdminLayout>

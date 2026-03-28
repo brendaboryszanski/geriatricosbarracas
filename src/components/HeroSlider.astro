@@ -1,0 +1,49 @@
+---
+interface Slide {
+  image_url: string;
+  caption: string;
+}
+
+interface Props {
+  slides: Slide[];
+}
+
+const { slides } = Astro.props;
+---
+
+<section id="home" class="relative pt-14">
+  <div class="swiper hero-swiper h-[70vh] min-h-[420px]">
+    <div class="swiper-wrapper">
+      {slides.map((slide) => (
+        <div class="swiper-slide relative">
+          <img
+            src={slide.image_url}
+            alt={slide.caption}
+            class="w-full h-full object-cover"
+          />
+          <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent flex items-end">
+            <div class="max-w-6xl mx-auto px-6 pb-16 w-full">
+              <p class="text-white text-xl md:text-3xl font-heading font-600 max-w-2xl leading-snug drop-shadow">
+                {slide.caption}
+              </p>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+    <div class="swiper-pagination"></div>
+    <div class="swiper-button-prev"></div>
+    <div class="swiper-button-next"></div>
+  </div>
+</section>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js" is:inline></script>
+<script is:inline>
+  new Swiper('.hero-swiper', {
+    loop: true,
+    autoplay: { delay: 5000, disableOnInteraction: false },
+    pagination: { el: '.swiper-pagination', clickable: true },
+    navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' },
+  });
+</script>

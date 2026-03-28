@@ -1,0 +1,83 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { supabase } from '../../lib/supabase';
+
+let errorMsg = '';
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const email = form.get('email') as string;
+  const password = form.get('password') as string;
+
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+  if (error || !data.session) {
+    errorMsg = 'Email o contraseña incorrectos.';
+  } else {
+    const { access_token, refresh_token } = data.session;
+    Astro.cookies.set('sb-access-token', access_token, {
+      path: '/',
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7,
+    });
+    Astro.cookies.set('sb-refresh-token', refresh_token, {
+      path: '/',
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 30,
+    });
+    return Astro.redirect('/admin');
+  }
+}
+---
+
+<Layout title="Admin — Geriátricos Barracas">
+  <div class="min-h-screen bg-blush flex items-center justify-center px-4">
+    <div class="bg-white rounded-2xl shadow-md border border-warm-border w-full max-w-sm p-8">
+      <div class="text-center mb-8">
+        <h1 class="font-heading font-800 text-2xl text-sage">Panel de administración</h1>
+        <p class="text-warm-gray text-sm mt-1">Geriátricos Barracas</p>
+      </div>
+
+      {errorMsg && (
+        <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm mb-5">
+          {errorMsg}
+        </div>
+      )}
+
+      <form method="POST" class="flex flex-col gap-4">
+        <div>
+          <label for="email" class="block text-sm font-medium text-warm-dark mb-1">Email</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            required
+            class="w-full border border-warm-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-sage focus:ring-1 focus:ring-sage"
+            placeholder="tu@email.com"
+          />
+        </div>
+        <div>
+          <label for="password" class="block text-sm font-medium text-warm-dark mb-1">Contraseña</label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            required
+            class="w-full border border-warm-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-sage focus:ring-1 focus:ring-sage"
+            placeholder="••••••••"
+          />
+        </div>
+        <button
+          type="submit"
+          class="w-full bg-sage hover:bg-sage-dark text-white font-medium py-2.5 rounded-xl transition-colors mt-2"
+        >
+          Ingresar
+        </button>
+      </form>
+    </div>
+  </div>
+</Layout>

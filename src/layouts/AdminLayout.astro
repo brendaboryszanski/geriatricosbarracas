@@ -1,0 +1,85 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  activeSection?: string;
+}
+
+const { title = 'Admin', activeSection = '' } = Astro.props;
+
+const navItems = [
+  { href: '/admin', label: 'Inicio', key: 'dashboard', icon: '🏠' },
+  { href: '/admin/slider', label: 'Fotos principales', key: 'slider', icon: '🖼️' },
+  { href: '/admin/residencias', label: 'Residencias', key: 'residencias', icon: '🏡' },
+  { href: '/admin/servicios', label: 'Servicios', key: 'servicios', icon: '🩺' },
+  { href: '/admin/actividades', label: 'Actividades', key: 'actividades', icon: '🎨' },
+  { href: '/admin/galeria', label: 'Galería de fotos', key: 'galeria', icon: '📷' },
+  { href: '/admin/equipo', label: 'Equipo', key: 'equipo', icon: '👥' },
+  { href: '/admin/objetivos', label: 'Objetivos', key: 'objetivos', icon: '🎯' },
+  { href: '/admin/contacto', label: 'Contacto', key: 'contacto', icon: '📞' },
+];
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+    <title>{title} — Admin Geriátricos Barracas</title>
+  </head>
+  <body class="bg-cream text-warm-dark min-h-screen flex">
+
+    <!-- Sidebar -->
+    <aside class="w-64 shrink-0 bg-warm-dark min-h-screen flex flex-col hidden md:flex">
+      <div class="p-6 border-b border-white/10">
+        <h1 class="font-heading font-800 text-white text-base leading-tight">Geriátricos Barracas</h1>
+        <p class="text-white/50 text-xs mt-0.5">Panel de administración</p>
+      </div>
+
+      <nav class="flex-1 p-3 flex flex-col gap-1">
+        {navItems.map((item) => (
+          <a
+            href={item.href}
+            class={`admin-nav-link flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+              activeSection === item.key
+                ? 'bg-sage text-white'
+                : 'text-white/70 hover:bg-white/10 hover:text-white'
+            }`}
+          >
+            <span>{item.icon}</span>
+            <span>{item.label}</span>
+          </a>
+        ))}
+      </nav>
+
+      <div class="p-4 border-t border-white/10">
+        <a href="/" target="_blank" class="flex items-center gap-2 text-white/50 hover:text-white/80 text-xs transition-colors">
+          <span>↗</span> Ver sitio
+        </a>
+        <form method="POST" action="/admin/logout" class="mt-2">
+          <button type="submit" class="text-white/50 hover:text-white/80 text-xs transition-colors">
+            Cerrar sesión
+          </button>
+        </form>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="flex-1 min-h-screen">
+      <!-- Mobile header -->
+      <header class="md:hidden bg-warm-dark px-4 py-3 flex items-center justify-between">
+        <h1 class="font-heading font-700 text-white text-sm">Admin · Geriátricos Barracas</h1>
+        <button id="sidebar-toggle" class="text-white">☰</button>
+      </header>
+
+      <div class="p-6 md:p-10 max-w-4xl">
+        <slot />
+      </div>
+    </main>
+
+  </body>
+</html>

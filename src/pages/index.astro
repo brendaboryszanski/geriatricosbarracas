@@ -1,0 +1,58 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Navbar from '../components/Navbar.astro';
+import HeroSlider from '../components/HeroSlider.astro';
+import ResidenceCards from '../components/ResidenceCards.astro';
+import ServicesGrid from '../components/ServicesGrid.astro';
+import ActivitiesSection from '../components/ActivitiesSection.astro';
+import GallerySection from '../components/GallerySection.astro';
+import TeamSection from '../components/TeamSection.astro';
+import ObjectivesSection from '../components/ObjectivesSection.astro';
+import ContactSection from '../components/ContactSection.astro';
+import Footer from '../components/Footer.astro';
+import { supabase } from '../lib/supabase';
+
+const [
+  { data: slides },
+  { data: residences },
+  { data: services },
+  { data: activities },
+  { data: photos },
+  { data: members },
+  { data: objectives },
+  { data: contactRows },
+] = await Promise.all([
+  supabase.from('slider').select('*').order('order'),
+  supabase.from('residences').select('*').order('id'),
+  supabase.from('services').select('*').order('order'),
+  supabase.from('activities').select('*').order('order'),
+  supabase.from('gallery').select('*').order('id'),
+  supabase.from('team').select('*').order('is_owner', { ascending: false }).order('order'),
+  supabase.from('objectives').select('*').order('id'),
+  supabase.from('contact').select('*'),
+]);
+
+const contactMap: Record<string, string> = {};
+contactRows?.forEach(row => { contactMap[row.key] = row.value; });
+
+const contact = {
+  email: contactMap.email ?? '',
+  map_url: contactMap.map_url ?? '',
+  residences: residences?.map(r => ({ name: r.name, phone: r.phone, address: r.address })) ?? [],
+};
+
+const footerText = contactMap.footer_text ?? 'Residencias para adultos mayores';
+---
+
+<Layout>
+  <Navbar />
+  <HeroSlider slides={slides ?? []} />
+  <ResidenceCards residences={residences ?? []} />
+  <ServicesGrid services={services ?? []} />
+  <ActivitiesSection activities={activities ?? []} />
+  <GallerySection photos={photos ?? []} />
+  <TeamSection members={members ?? []} />
+  <ObjectivesSection objectives={objectives ?? []} />
+  <ContactSection contact={contact} />
+  <Footer text={footerText} />
+</Layout>

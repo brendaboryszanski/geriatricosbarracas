@@ -1,0 +1,64 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { supabase } from '../../lib/supabase';
+
+let successMsg = '';
+let errorMsg = '';
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+
+  const updates: Array<{ key: string; value: string }> = [
+    { key: 'email', value: form.get('email') as string },
+    { key: 'map_url', value: form.get('map_url') as string },
+    { key: 'footer_text', value: form.get('footer_text') as string },
+  ];
+
+  const errors = await Promise.all(
+    updates.map(({ key, value }) =>
+      supabase.from('contact').update({ value }).eq('key', key)
+    )
+  );
+
+  if (errors.some(r => r.error)) errorMsg = 'Error al guardar algunos campos.';
+  else successMsg = 'Guardado correctamente.';
+}
+
+const { data: contactRows } = await supabase.from('contact').select('*');
+const contact: Record<string, string> = {};
+contactRows?.forEach(row => { contact[row.key] = row.value; });
+---
+
+<AdminLayout title="Contacto" activeSection="contacto">
+  <h2 class="font-heading font-800 text-2xl text-sage mb-1">Contacto</h2>
+  <p class="text-warm-gray text-sm mb-8">Editá los datos de contacto del sitio.</p>
+
+  {successMsg && <div class="bg-green-50 border border-green-200 text-green-700 rounded-xl px-4 py-3 text-sm mb-6">{successMsg}</div>}
+  {errorMsg && <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm mb-6">{errorMsg}</div>}
+
+  <form method="POST" class="bg-white rounded-2xl border border-warm-border p-6 flex flex-col gap-5">
+    <div class="flex flex-col gap-1">
+      <label class="text-sm font-medium text-warm-dark">Email de contacto</label>
+      <input name="email" type="email" value={contact.email} class="border border-warm-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-sage" />
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label class="text-sm font-medium text-warm-dark">URL del mapa de Google</label>
+      <input name="map_url" value={contact.map_url} class="border border-warm-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-sage font-mono" />
+      <p class="text-xs text-warm-gray">Es la URL del src del iframe de Google Maps.</p>
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label class="text-sm font-medium text-warm-dark">Texto del pie de página</label>
+      <input name="footer_text" value={contact.footer_text} class="border border-warm-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-sage" />
+    </div>
+
+    <div class="border-t border-warm-border pt-4">
+      <p class="text-xs text-warm-gray mb-2">Los teléfonos y direcciones de cada residencia se editan en la sección <a href="/admin/residencias" class="text-sage hover:underline">Residencias</a>.</p>
+    </div>
+
+    <button type="submit" class="self-start bg-sage hover:bg-sage-dark text-white px-6 py-2.5 rounded-xl text-sm font-medium transition-colors">
+      Guardar cambios
+    </button>
+  </form>
+</AdminLayout>

@@ -1,0 +1,77 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { supabase } from '../../lib/supabase';
+
+let successMsg = '';
+let errorMsg = '';
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const id = form.get('id') as string;
+  const name = form.get('name') as string;
+  const address = form.get('address') as string;
+  const phone = form.get('phone') as string;
+  const description = form.get('description') as string;
+  const amenitiesRaw = form.get('amenities') as string;
+  const amenities = amenitiesRaw.split('\n').map(s => s.trim()).filter(Boolean);
+
+  const { error } = await supabase
+    .from('residences')
+    .update({ name, address, phone, description, amenities })
+    .eq('id', id);
+
+  if (error) errorMsg = 'Error al guardar. Intentá de nuevo.';
+  else successMsg = 'Guardado correctamente.';
+}
+
+const { data: residences } = await supabase
+  .from('residences')
+  .select('*')
+  .order('id');
+---
+
+<AdminLayout title="Residencias" activeSection="residencias">
+  <h2 class="font-heading font-800 text-2xl text-sage mb-1">Residencias</h2>
+  <p class="text-warm-gray text-sm mb-8">Editá la información de cada residencia.</p>
+
+  {successMsg && <div class="bg-green-50 border border-green-200 text-green-700 rounded-xl px-4 py-3 text-sm mb-6">{successMsg}</div>}
+  {errorMsg && <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm mb-6">{errorMsg}</div>}
+
+  <div class="flex flex-col gap-8">
+    {residences?.map((r) => (
+      <form method="POST" class="bg-white rounded-2xl border border-warm-border p-6 flex flex-col gap-4">
+        <input type="hidden" name="id" value={r.id} />
+
+        <div class="flex flex-col gap-1">
+          <label class="text-sm font-medium text-warm-dark">Nombre</label>
+          <input name="name" value={r.name} required class="border border-warm-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-sage focus:ring-1 focus:ring-sage" />
+        </div>
+
+        <div class="grid sm:grid-cols-2 gap-4">
+          <div class="flex flex-col gap-1">
+            <label class="text-sm font-medium text-warm-dark">Dirección</label>
+            <input name="address" value={r.address} class="border border-warm-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-sage focus:ring-1 focus:ring-sage" />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-sm font-medium text-warm-dark">Teléfono</label>
+            <input name="phone" value={r.phone} class="border border-warm-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-sage focus:ring-1 focus:ring-sage" />
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <label class="text-sm font-medium text-warm-dark">Descripción</label>
+          <textarea name="description" rows="3" class="border border-warm-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-sage focus:ring-1 focus:ring-sage resize-none">{r.description}</textarea>
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <label class="text-sm font-medium text-warm-dark">Comodidades <span class="text-warm-gray font-normal">(una por línea)</span></label>
+          <textarea name="amenities" rows="6" class="border border-warm-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-sage focus:ring-1 focus:ring-sage resize-none font-mono">{r.amenities?.join('\n')}</textarea>
+        </div>
+
+        <button type="submit" class="self-start bg-sage hover:bg-sage-dark text-white px-6 py-2.5 rounded-xl text-sm font-medium transition-colors">
+          Guardar {r.name}
+        </button>
+      </form>
+    ))}
+  </div>
+</AdminLayout>

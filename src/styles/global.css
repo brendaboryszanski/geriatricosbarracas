@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+@theme {
+  --color-sage: #5B7B6F;
+  --color-sage-dark: #4a6860;
+  --color-sage-light: #7a9a8e;
+  --color-cream: #FFF8F0;
+  --color-terracotta: #C67D5B;
+  --color-terracotta-dark: #b06a47;
+  --color-blush: #F5E6D3;
+  --color-warm-dark: #2D2A26;
+  --color-warm-gray: #6B6560;
+  --color-warm-border: #E8D8C8;
+
+  --font-heading: "Nunito", sans-serif;
+  --font-body: "Inter", sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+  font-family: var(--font-body);
+  color: var(--color-warm-dark);
+  background-color: var(--color-cream);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+}
+
+/* Swiper overrides */
+.swiper-pagination-bullet-active {
+  background: var(--color-terracotta) !important;
+}
+.swiper-button-next,
+.swiper-button-prev {
+  color: white !important;
+}
+
+/* Gallery filter */
+.gallery-item {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.gallery-item.hidden {
+  display: none;
+}
+
+/* Team card hover */
+.team-card .team-overlay {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.team-card:hover .team-overlay,
+.team-card:focus-within .team-overlay {
+  opacity: 1;
+}
+
+/* Admin */
+.admin-nav-link.active {
+  background-color: var(--color-sage);
+  color: white;
+}

@@ -1,0 +1,120 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { supabase } from '../../lib/supabase';
+
+let successMsg = '';
+let errorMsg = '';
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const action = form.get('action') as string;
+
+  if (action === 'delete') {
+    const id = form.get('id') as string;
+    const { error } = await supabase.from('gallery').delete().eq('id', id);
+    if (error) errorMsg = 'Error al eliminar.';
+    else successMsg = 'Foto eliminada.';
+  }
+
+  if (action === 'add') {
+    const title = form.get('title') as string;
+    const category = form.get('category') as string;
+    const file = form.get('file') as File;
+
+    if (file && file.size > 0) {
+      const filename = `gallery/${Date.now()}-${file.name.replace(/\s/g, '-')}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('images')
+        .upload(filename, file, { contentType: file.type, upsert: false });
+
+      if (uploadError) {
+        errorMsg = 'Error al subir la imagen.';
+      } else {
+        const { data: { publicUrl } } = supabase.storage.from('images').getPublicUrl(filename);
+        const { error } = await supabase.from('gallery').insert({ title, category, image_url: publicUrl });
+        if (error) errorMsg = 'Error al guardar.';
+        else successMsg = 'Foto agregada correctamente.';
+      }
+    }
+  }
+
+  if (action === 'update') {
+    const id = form.get('id') as string;
+    const title = form.get('title') as string;
+    const category = form.get('category') as string;
+    const { error } = await supabase.from('gallery').update({ title, category }).eq('id', id);
+    if (error) errorMsg = 'Error al guardar.';
+    else successMsg = 'Guardado correctamente.';
+  }
+}
+
+const { data: photos } = await supabase
+  .from('gallery')
+  .select('*')
+  .order('id', { ascending: false });
+
+const categories = ['Momentos', 'Lesa', 'Rincon'];
+---
+
+<AdminLayout title="Galería" activeSection="galeria">
+  <h2 class="font-heading font-800 text-2xl text-sage mb-1">Galería de fotos</h2>
+  <p class="text-warm-gray text-sm mb-8">Agregá, editá o eliminá fotos de la galería.</p>
+
+  {successMsg && <div class="bg-green-50 border border-green-200 text-green-700 rounded-xl px-4 py-3 text-sm mb-6">{successMsg}</div>}
+  {errorMsg && <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm mb-6">{errorMsg}</div>}
+
+  <!-- Add photo -->
+  <div class="bg-white rounded-2xl border border-warm-border p-6 mb-8">
+    <h3 class="font-heading font-700 text-sage mb-4">Agregar foto</h3>
+    <form method="POST" enctype="multipart/form-data" class="flex flex-col gap-4">
+      <input type="hidden" name="action" value="add" />
+
+      <div class="grid sm:grid-cols-2 gap-4">
+        <div class="flex flex-col gap-1">
+          <label class="text-sm font-medium text-warm-dark">Título de la foto</label>
+          <input name="title" required placeholder="Ej: Patio exterior" class="border border-warm-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-sage focus:ring-1 focus:ring-sage" />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-sm font-medium text-warm-dark">Categoría</label>
+          <select name="category" required class="border border-warm-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-sage bg-white">
+            {categories.map(c => <option value={c}>{c === 'Rincon' ? 'Rincón del Sur' : c}</option>)}
+          </select>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label class="text-sm font-medium text-warm-dark">Imagen</label>
+        <input type="file" name="file" accept="image/*" required class="border border-warm-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-sage file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-sage/10 file:text-sage file:text-sm file:font-medium" />
+      </div>
+
+      <button type="submit" class="self-start bg-terracotta hover:bg-terracotta-dark text-white px-6 py-2.5 rounded-xl text-sm font-medium transition-colors">
+        + Agregar foto
+      </button>
+    </form>
+  </div>
+
+  <!-- Photo grid -->
+  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+    {photos?.map((p) => (
+      <div class="bg-white rounded-xl border border-warm-border overflow-hidden">
+        <img src={p.image_url} alt={p.title} class="w-full h-36 object-cover" />
+        <div class="p-3 flex flex-col gap-2">
+          <form method="POST" class="flex flex-col gap-2">
+            <input type="hidden" name="action" value="update" />
+            <input type="hidden" name="id" value={p.id} />
+            <input name="title" value={p.title} class="border border-warm-border rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-sage w-full" />
+            <select name="category" class="border border-warm-border rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-sage bg-white">
+              {categories.map(c => <option value={c} selected={p.category === c}>{c === 'Rincon' ? 'Rincón del Sur' : c}</option>)}
+            </select>
+            <button type="submit" class="text-sage text-xs font-medium hover:underline text-left">Guardar</button>
+          </form>
+          <form method="POST" onsubmit="return confirm('¿Eliminar esta foto?')">
+            <input type="hidden" name="action" value="delete" />
+            <input type="hidden" name="id" value={p.id} />
+            <button type="submit" class="text-red-400 text-xs hover:underline">Eliminar</button>
+          </form>
+        </div>
+      </div>
+    ))}
+  </div>
+</AdminLayout>

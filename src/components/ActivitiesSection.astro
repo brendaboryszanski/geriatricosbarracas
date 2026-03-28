@@ -1,0 +1,34 @@
+---
+interface Activity {
+  title: string;
+  description: string;
+  image_url: string;
+}
+
+interface Props {
+  activities: Activity[];
+}
+
+const { activities } = Astro.props;
+---
+
+<section class="bg-cream py-20 px-4">
+  <div class="max-w-6xl mx-auto">
+    <div class="text-center mb-12">
+      <h2 class="font-heading font-800 text-3xl md:text-4xl text-sage mb-3">Actividades</h2>
+      <p class="text-warm-gray text-lg max-w-xl mx-auto">Momentos de alegría, aprendizaje y conexión para nuestros residentes.</p>
+    </div>
+
+    <div class="grid sm:grid-cols-3 gap-8">
+      {activities.map((a) => (
+        <div class="flex flex-col items-center text-center gap-4">
+          <div class="w-40 h-40 rounded-full overflow-hidden border-4 border-terracotta/30 shadow-md">
+            <img src={a.image_url} alt={a.title} class="w-full h-full object-cover hover:scale-110 transition-transform duration-300" />
+          </div>
+          <h3 class="font-heading font-700 text-sage text-lg">{a.title}</h3>
+          <p class="text-warm-gray text-sm leading-relaxed max-w-xs">{a.description}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

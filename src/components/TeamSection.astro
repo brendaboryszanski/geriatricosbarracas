@@ -1,0 +1,67 @@
+---
+interface TeamMember {
+  name: string;
+  role: string;
+  photo_url: string;
+  bio: string;
+  is_owner: boolean;
+}
+
+interface Props {
+  members: TeamMember[];
+}
+
+const { members } = Astro.props;
+
+const owners = members.filter(m => m.is_owner);
+const staff = members.filter(m => !m.is_owner);
+---
+
+<section id="equipo" class="bg-cream py-20 px-4">
+  <div class="max-w-6xl mx-auto">
+    <div class="text-center mb-12">
+      <h2 class="font-heading font-800 text-3xl md:text-4xl text-sage mb-3">¿Quiénes somos?</h2>
+      <p class="text-warm-gray text-lg max-w-2xl mx-auto">Un equipo humano y profesional comprometido con el bienestar de cada residente.</p>
+    </div>
+
+    <!-- Owners -->
+    {owners.length > 0 && (
+      <div class="flex flex-wrap justify-center gap-8 mb-14">
+        {owners.map((m) => (
+          <div class="team-card relative w-64 rounded-2xl overflow-hidden shadow-md border border-warm-border group cursor-pointer">
+            <img src={m.photo_url} alt={m.name} class="w-full h-72 object-cover" />
+            <div class="p-4 bg-white">
+              <h3 class="font-heading font-700 text-sage text-base">{m.name}</h3>
+              <p class="text-terracotta text-xs font-medium">{m.role}</p>
+            </div>
+            <div class="team-overlay absolute inset-0 bg-sage/90 flex flex-col justify-center p-5">
+              <h3 class="font-heading font-700 text-white text-base mb-1">{m.name}</h3>
+              <p class="text-white/80 text-xs mb-3">{m.role}</p>
+              <p class="text-white/90 text-sm leading-relaxed">{m.bio}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
+
+    <!-- Staff grid -->
+    {staff.length > 0 && (
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+        {staff.map((m) => (
+          <div class="team-card relative rounded-2xl overflow-hidden shadow-sm border border-warm-border group cursor-pointer">
+            <img src={m.photo_url} alt={m.name} class="w-full h-52 object-cover" />
+            <div class="p-3 bg-white">
+              <h3 class="font-heading font-600 text-sage text-sm">{m.name}</h3>
+              <p class="text-terracotta text-xs">{m.role}</p>
+            </div>
+            <div class="team-overlay absolute inset-0 bg-sage/90 flex flex-col justify-center p-4">
+              <h3 class="font-heading font-700 text-white text-sm mb-1">{m.name}</h3>
+              <p class="text-white/80 text-xs mb-2">{m.role}</p>
+              <p class="text-white/90 text-xs leading-relaxed">{m.bio}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+</section>

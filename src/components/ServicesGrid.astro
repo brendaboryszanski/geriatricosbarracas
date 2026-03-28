@@ -1,0 +1,40 @@
+---
+interface Service {
+  title: string;
+  description: string;
+}
+
+interface Props {
+  services: Service[];
+}
+
+const { services } = Astro.props;
+
+const icons: Record<number, string> = {
+  0: '🩺',
+  1: '🧠',
+  2: '🥗',
+  3: '🏃',
+  4: '👩‍⚕️',
+  5: '🤝',
+};
+---
+
+<section id="servicios" class="bg-blush py-20 px-4">
+  <div class="max-w-6xl mx-auto">
+    <div class="text-center mb-12">
+      <h2 class="font-heading font-800 text-3xl md:text-4xl text-sage mb-3">¿Qué ofrecemos?</h2>
+      <p class="text-warm-gray text-lg max-w-xl mx-auto">Servicios profesionales para el bienestar integral de cada residente.</p>
+    </div>
+
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {services.map((s, i) => (
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-warm-border hover:shadow-md hover:-translate-y-1 transition-all">
+          <div class="text-3xl mb-4">{icons[i] ?? '⭐'}</div>
+          <h3 class="font-heading font-700 text-sage text-lg mb-2">{s.title}</h3>
+          <p class="text-warm-gray text-sm leading-relaxed">{s.description}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
