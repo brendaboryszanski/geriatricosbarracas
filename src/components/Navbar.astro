@@ -1,4 +1,8 @@
 ---
+interface Props {
+  showFaqs?: boolean;
+}
+const { showFaqs = false } = Astro.props;
 ---
 <nav id="navbar" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300" style="background-color: #5B7B6F;">
   <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -14,6 +18,7 @@
       <li><a href="#fotos" class="hover:text-white transition-colors">Fotos</a></li>
       <li><a href="#equipo" class="hover:text-white transition-colors">Equipo</a></li>
       <li><a href="#resenas" class="hover:text-white transition-colors">Reseñas</a></li>
+      {showFaqs && <li><a href="#faqs" class="hover:text-white transition-colors">Preguntas</a></li>}
       <li>
         <a href="#contacto" class="bg-white/20 hover:bg-white/30 text-white px-4 py-1.5 rounded-full transition-colors font-semibold">
           Contacto
@@ -39,6 +44,7 @@
       <li><a href="#fotos" class="block py-1 hover:text-white">Fotos</a></li>
       <li><a href="#equipo" class="block py-1 hover:text-white">Equipo</a></li>
       <li><a href="#resenas" class="block py-1 hover:text-white">Reseñas</a></li>
+      {showFaqs && <li><a href="#faqs" class="block py-1 hover:text-white">Preguntas</a></li>}
       <li><a href="#contacto" class="block py-1 font-semibold hover:text-white">📞 Contacto</a></li>
     </ul>
   </div>

@@ -11,7 +11,6 @@ interface Props {
 }
 
 const { faqs } = Astro.props;
-
 if (faqs.length === 0) return;
 ---
 
@@ -23,7 +22,7 @@ if (faqs.length === 0) return;
     </div>
 
     <div class="flex flex-col gap-3">
-      {faqs.map((faq, i) => (
+      {faqs.map((faq) => (
         <div class="faq-item bg-white rounded-2xl border border-warm-border overflow-hidden">
           <button
             type="button"
@@ -52,7 +51,6 @@ if (faqs.length === 0) return;
       const icon = btn.querySelector('.faq-icon');
       const isOpen = btn.getAttribute('aria-expanded') === 'true';
 
-      // Close all others
       document.querySelectorAll('.faq-item').forEach(other => {
         if (other !== item) {
           other.querySelector('.faq-trigger').setAttribute('aria-expanded', 'false');
@@ -61,7 +59,6 @@ if (faqs.length === 0) return;
         }
       });
 
-      // Toggle current
       btn.setAttribute('aria-expanded', String(!isOpen));
       answer.classList.toggle('hidden', isOpen);
       icon.style.transform = isOpen ? '' : 'rotate(180deg)';

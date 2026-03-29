@@ -54,7 +54,7 @@ const firstSlideImage = slides?.[0]?.image_url
 ---
 
 <Layout ogImage={firstSlideImage}>
-  <Navbar />
+  <Navbar showFaqs={(faqs ?? []).length > 0} />
   <HeroSlider slides={slides ?? []} />
   <ResidenceCards residences={residences ?? []} />
   <ServicesGrid services={services ?? []} />
