@@ -57,35 +57,39 @@ const PAGE_SIZE = 12;
       <p class="text-warm-gray text-lg max-w-xl mx-auto">Espacios cálidos pensados para sentirse en casa.</p>
     </div>
 
-    <!-- Residence filter (primary) -->
-    <div class="flex flex-wrap justify-center gap-2 mb-3">
-      {residenceFilters.map((f) => (
-        <button
-          data-residence={f.value}
-          class={`filter-btn residence-filter px-5 py-2 rounded-full text-sm font-medium border transition-all ${f.value === 'all' ? 'active' : 'bg-white text-warm-gray border-warm-border hover:border-sage hover:text-sage'}`}
-        >
-          {f.label}
-        </button>
-      ))}
-    </div>
-
-    <!-- Subcategory filter (secondary) — only if there's more than 1 -->
-    {hasSubcategories && (
-      <div class="flex flex-wrap justify-center gap-2 mb-8">
-        <button data-sub="all" class="filter-btn sub-filter active px-4 py-1.5 rounded-full text-xs font-medium border transition-all">
-          Todos los ambientes
-        </button>
-        {rawSubcategories.map((s) => (
+    <!-- Filters: residence + subcategory in a unified bar -->
+    <div class="bg-white rounded-2xl border border-warm-border p-4 mb-8 flex flex-col gap-3">
+      <!-- Residence -->
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="text-xs font-medium text-warm-gray w-20 shrink-0">Residencia</span>
+        {residenceFilters.map((f) => (
           <button
-            data-sub={s}
-            class="filter-btn sub-filter px-4 py-1.5 rounded-full text-xs font-medium border bg-white text-warm-gray border-warm-border hover:border-sage hover:text-sage"
+            data-residence={f.value}
+            class={`filter-btn residence-filter px-4 py-1.5 rounded-full text-sm font-medium border transition-all ${f.value === 'all' ? 'active bg-sage text-white border-sage' : 'bg-transparent text-warm-gray border-warm-border hover:border-sage hover:text-sage'}`}
           >
-            {s}
+            {f.label}
           </button>
         ))}
       </div>
-    )}
-    {!hasSubcategories && <div class="mb-8"></div>}
+
+      <!-- Subcategory — only if more than 1 -->
+      {hasSubcategories && (
+        <div class="flex flex-wrap items-center gap-2 border-t border-warm-border pt-3">
+          <span class="text-xs font-medium text-warm-gray w-20 shrink-0">Ambiente</span>
+          <button data-sub="all" class="filter-btn sub-filter active px-4 py-1.5 rounded-full text-sm font-medium border bg-sage text-white border-sage transition-all">
+            Todos
+          </button>
+          {rawSubcategories.map((s) => (
+            <button
+              data-sub={s}
+              class="filter-btn sub-filter px-4 py-1.5 rounded-full text-sm font-medium border bg-transparent text-warm-gray border-warm-border hover:border-sage hover:text-sage transition-all"
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
 
     <!-- Masonry grid -->
     <div id="gallery-grid" class="columns-2 sm:columns-3 lg:columns-4">
