@@ -20,9 +20,9 @@ const residenceFilters = [
   { label: 'Rincón del Sur', value: 'Rincón del Sur' },
 ];
 
-// Dynamic subcategory filters from DB
-const rawSubcategories = [...new Set(photos.map(p => p.subcategory).filter(Boolean))];
-const hasSubcategories = rawSubcategories.length > 1;
+// Dynamic subcategory filters — exclude "Otros" (it's the default, not a meaningful filter)
+const rawSubcategories = [...new Set(photos.map(p => p.subcategory).filter(s => s && s !== 'Otros'))];
+const hasSubcategories = rawSubcategories.length > 0;
 
 const PAGE_SIZE = 12;
 ---
