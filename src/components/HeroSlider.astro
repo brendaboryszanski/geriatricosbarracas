@@ -11,19 +11,70 @@ interface Props {
 const { slides } = Astro.props;
 ---
 
+<style>
+  .hero-swiper .swiper-slide img {
+    transition: transform 6s ease;
+    transform: scale(1.05);
+  }
+  .hero-swiper .swiper-slide-active img {
+    transform: scale(1);
+  }
+  .slide-caption {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.8s ease 0.3s, transform 0.8s ease 0.3s;
+  }
+  .swiper-slide-active .slide-caption {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .swiper-button-next,
+  .swiper-button-prev {
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(4px);
+    border-radius: 50%;
+    width: 44px !important;
+    height: 44px !important;
+    transition: background 0.2s;
+  }
+  .swiper-button-next:hover,
+  .swiper-button-prev:hover {
+    background: rgba(255,255,255,0.3);
+  }
+  .swiper-button-next::after,
+  .swiper-button-prev::after {
+    font-size: 16px !important;
+    font-weight: 700;
+    color: white;
+  }
+  .swiper-pagination-bullet {
+    background: white !important;
+    opacity: 0.5;
+    width: 8px;
+    height: 8px;
+    transition: all 0.3s;
+  }
+  .swiper-pagination-bullet-active {
+    opacity: 1 !important;
+    width: 24px !important;
+    border-radius: 4px !important;
+    background: #C67D5B !important;
+  }
+</style>
+
 <section id="home" class="relative pt-14">
-  <div class="swiper hero-swiper h-[70vh] min-h-[420px]">
+  <div class="swiper hero-swiper h-[80vh] min-h-[480px]">
     <div class="swiper-wrapper">
       {slides.map((slide) => (
-        <div class="swiper-slide relative">
+        <div class="swiper-slide relative overflow-hidden">
           <img
             src={slide.image_url}
             alt={slide.caption}
             class="w-full h-full object-cover"
           />
-          <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent flex items-end">
-            <div class="max-w-6xl mx-auto px-6 pb-16 w-full">
-              <p class="text-white text-xl md:text-3xl font-heading font-600 max-w-2xl leading-snug drop-shadow">
+          <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-black/10 flex items-end">
+            <div class="max-w-6xl mx-auto px-6 pb-20 w-full">
+              <p class="slide-caption text-white text-2xl md:text-4xl font-heading font-700 max-w-2xl leading-tight drop-shadow-lg">
                 {slide.caption}
               </p>
             </div>
@@ -31,9 +82,9 @@ const { slides } = Astro.props;
         </div>
       ))}
     </div>
-    <div class="swiper-pagination"></div>
-    <div class="swiper-button-prev"></div>
-    <div class="swiper-button-next"></div>
+    <div class="swiper-pagination" style="bottom: 24px;"></div>
+    <div class="swiper-button-prev" style="left: 20px;"></div>
+    <div class="swiper-button-next" style="right: 20px;"></div>
   </div>
 </section>
 
@@ -42,7 +93,10 @@ const { slides } = Astro.props;
 <script is:inline>
   new Swiper('.hero-swiper', {
     loop: true,
-    autoplay: { delay: 5000, disableOnInteraction: false },
+    speed: 900,
+    autoplay: { delay: 5500, disableOnInteraction: false },
+    effect: 'fade',
+    fadeEffect: { crossFade: true },
     pagination: { el: '.swiper-pagination', clickable: true },
     navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' },
   });

@@ -36,13 +36,16 @@ const { contact } = Astro.props;
           <h3 class="font-heading font-700 text-sage text-lg mb-3">Email</h3>
           <a href={`mailto:${contact.email}`} class="text-terracotta hover:underline text-sm">{contact.email}</a>
 
-          <div class="flex items-center gap-3 mt-4">
-            <a href="https://www.facebook.com/geriatricosbarracas" target="_blank" rel="noopener"
+          <div class="flex flex-col gap-2 mt-4">
+            <a href="https://www.google.com/maps/place/?q=place_id:ChIJeUHXc1DLvJURowRnVXIBMf0" target="_blank" rel="noopener"
                class="flex items-center gap-2 text-sage hover:text-sage-dark text-sm font-medium transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
-              </svg>
-              Facebook
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+              Reseñas de Le-Sa en Google
+            </a>
+            <a href="https://www.google.com/maps/place/?q=place_id:ChIJ7emZFlPLvJURHUDH-GLvdjM" target="_blank" rel="noopener"
+               class="flex items-center gap-2 text-sage hover:text-sage-dark text-sm font-medium transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+              Reseñas de Rincón del Sur en Google
             </a>
           </div>
 

@@ -1,0 +1,148 @@
+---
+const GOOGLE_API_KEY = import.meta.env.GOOGLE_PLACES_API_KEY;
+
+const PLACES = [
+  { id: 'ChIJeUHXc1DLvJURowRnVXIBMf0', name: 'Le-Sa' },
+  { id: 'ChIJ7emZFlPLvJURHUDH-GLvdjM', name: 'Rincón del Sur' },
+];
+
+interface Review {
+  authorAttribution: { displayName: string; photoUri?: string };
+  rating: number;
+  text?: { text: string };
+  relativePublishTimeDescription: string;
+}
+
+interface PlaceResult {
+  name: string;
+  rating: number;
+  userRatingCount: number;
+  reviews: Review[];
+}
+
+let allReviews: Array<Review & { residence: string }> = [];
+let ratings: Record<string, { rating: number; count: number }> = {};
+
+if (GOOGLE_API_KEY) {
+  const results = await Promise.allSettled(
+    PLACES.map(place =>
+      fetch(
+        `https://places.googleapis.com/v1/places/${place.id}?fields=rating,userRatingCount,reviews&languageCode=es`,
+        {
+          headers: {
+            'X-Goog-Api-Key': GOOGLE_API_KEY,
+            'X-Goog-FieldMask': 'rating,userRatingCount,reviews',
+          },
+        }
+      )
+        .then(r => r.json() as Promise<PlaceResult>)
+        .then(data => ({ ...data, placeName: place.name }))
+    )
+  );
+
+  for (const [i, result] of results.entries()) {
+    if (result.status === 'fulfilled') {
+      const data = result.value as PlaceResult & { placeName: string };
+      ratings[PLACES[i].name] = {
+        rating: data.rating ?? 0,
+        count: data.userRatingCount ?? 0,
+      };
+      if (data.reviews) {
+        const withText = data.reviews
+          .filter(r => r.text?.text && r.rating >= 4)
+          .slice(0, 3);
+        allReviews.push(...withText.map(r => ({ ...r, residence: PLACES[i].name })));
+      }
+    }
+  }
+
+  // Sort by rating desc, max 6 total
+  allReviews = allReviews
+    .sort((a, b) => b.rating - a.rating)
+    .slice(0, 6);
+}
+---
+
+{GOOGLE_API_KEY && allReviews.length > 0 && (
+  <section id="resenas" class="bg-cream py-20 px-4">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center mb-12">
+        <h2 class="font-heading font-800 text-3xl md:text-4xl text-sage mb-3">Lo que dicen las familias</h2>
+
+        <!-- Rating summaries -->
+        <div class="flex flex-wrap justify-center gap-6 mt-6 mb-2">
+          {Object.entries(ratings).map(([name, data]) => (
+            <div class="flex items-center gap-2">
+              <span class="font-heading font-700 text-warm-dark text-sm">{name}</span>
+              <span class="text-yellow-400 text-lg">{'★'.repeat(Math.round(data.rating))}</span>
+              <span class="text-sage font-700">{data.rating.toFixed(1)}</span>
+              <span class="text-warm-gray text-xs">({data.count} reseñas)</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        {allReviews.map((review) => (
+          <div class="bg-white rounded-2xl p-5 shadow-sm border border-warm-border flex flex-col gap-3">
+            <!-- Header -->
+            <div class="flex items-center gap-3">
+              {review.authorAttribution.photoUri ? (
+                <img
+                  src={review.authorAttribution.photoUri}
+                  alt={review.authorAttribution.displayName}
+                  class="w-10 h-10 rounded-full object-cover"
+                  referrerpolicy="no-referrer"
+                />
+              ) : (
+                <div class="w-10 h-10 rounded-full bg-sage/20 flex items-center justify-center text-sage font-heading font-700 text-base">
+                  {review.authorAttribution.displayName?.[0] ?? '?'}
+                </div>
+              )}
+              <div>
+                <p class="font-medium text-warm-dark text-sm">{review.authorAttribution.displayName}</p>
+                <p class="text-warm-gray text-xs">{review.relativePublishTimeDescription}</p>
+              </div>
+              <span class="ml-auto text-xs text-terracotta font-medium">{review.residence}</span>
+            </div>
+
+            <!-- Stars -->
+            <div class="text-yellow-400 text-base leading-none">
+              {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
+            </div>
+
+            <!-- Text -->
+            {review.text?.text && (
+              <div class="flex flex-col gap-2 flex-1">
+                <p class="text-warm-gray text-sm leading-relaxed">
+                  "{review.text.text}"
+                </p>
+                <a
+                  href={`https://www.google.com/maps/place/?q=place_id:${PLACES.find(p => p.name === review.residence)?.id}`}
+                  target="_blank"
+                  rel="noopener"
+                  class="text-sage text-xs font-medium hover:underline self-start"
+                >
+                  Ver en Google Maps →
+                </a>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <div class="text-center mt-8 flex justify-center gap-6">
+        {PLACES.map(p => (
+          <a
+            href={`https://www.google.com/maps/place/?q=place_id:${p.id}`}
+            target="_blank"
+            rel="noopener"
+            class="text-sage hover:text-sage-dark text-sm font-medium hover:underline transition-colors"
+          >
+            Ver todas las reseñas de {p.name} →
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+)}
