@@ -15,16 +15,16 @@ interface Props {
 const { photos } = Astro.props;
 
 // Dynamic categories from actual data
-const categoryLabels: Record<string, string> = {
+// Legacy mappings for photos uploaded before the category rename
+const legacyLabels: Record<string, string> = {
   Lesa: 'Le-Sa',
   Rincon: 'Rincón del Sur',
-  Momentos: 'Momentos',
 };
 
 const rawCategories = [...new Set(photos.map(p => p.category))];
 const filters = [
   { label: 'Todas', value: 'all' },
-  ...rawCategories.map(c => ({ label: categoryLabels[c] ?? c, value: c })),
+  ...rawCategories.map(c => ({ label: legacyLabels[c] ?? c, value: c })),
 ];
 
 const PAGE_SIZE = 12;

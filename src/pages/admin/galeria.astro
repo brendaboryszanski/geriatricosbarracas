@@ -53,7 +53,6 @@ const { data: photos } = await supabase
   .select('*')
   .order('id', { ascending: false });
 
-const categories = ['Momentos', 'Lesa', 'Rincon'];
 ---
 
 <AdminLayout title="Galería" activeSection="galeria">
@@ -62,6 +61,15 @@ const categories = ['Momentos', 'Lesa', 'Rincon'];
 
   {successMsg && <div class="bg-green-50 border border-green-200 text-green-700 rounded-xl px-4 py-3 text-sm mb-6">{successMsg}</div>}
   {errorMsg && <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm mb-6">{errorMsg}</div>}
+
+  <datalist id="cat-suggestions">
+    <option value="Le-Sa" />
+    <option value="Rincón del Sur" />
+    <option value="Ambas" />
+    <option value="Momentos" />
+    <option value="Habitaciones" />
+    <option value="Espacios comunes" />
+  </datalist>
 
   <!-- Add photo -->
   <div class="bg-white rounded-2xl border border-warm-border p-6 mb-8">
@@ -76,9 +84,8 @@ const categories = ['Momentos', 'Lesa', 'Rincon'];
         </div>
         <div class="flex flex-col gap-1">
           <label class="text-sm font-medium text-warm-dark">Categoría</label>
-          <select name="category" required class="border border-warm-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-sage bg-white">
-            {categories.map(c => <option value={c}>{c === 'Rincon' ? 'Rincón del Sur' : c}</option>)}
-          </select>
+          <input name="category" required list="cat-suggestions" placeholder="Ej: Le-Sa, Ambas, Habitaciones…" class="border border-warm-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-sage focus:ring-1 focus:ring-sage" />
+          <p class="text-warm-gray text-xs">Podés elegir una sugerencia o escribir la que quieras.</p>
         </div>
       </div>
 
@@ -103,9 +110,7 @@ const categories = ['Momentos', 'Lesa', 'Rincon'];
             <input type="hidden" name="action" value="update" />
             <input type="hidden" name="id" value={p.id} />
             <input name="title" value={p.title} class="border border-warm-border rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-sage w-full" />
-            <select name="category" class="border border-warm-border rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-sage bg-white">
-              {categories.map(c => <option value={c} selected={p.category === c}>{c === 'Rincon' ? 'Rincón del Sur' : c}</option>)}
-            </select>
+            <input name="category" value={p.category} list="cat-suggestions" class="border border-warm-border rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-sage w-full" />
             <button type="submit" class="text-sage text-xs font-medium hover:underline text-left">Guardar</button>
           </form>
           <form method="POST" onsubmit="return confirm('¿Eliminar esta foto?')">
