@@ -26,16 +26,14 @@
       var url = window.location.pathname;
       var hasError = false;
 
-      for (var i = 0; i < dirtyForms.length; i++) {
-        try {
-          var res = await fetch(url, {
-            method: 'POST',
-            body: new FormData(dirtyForms[i]),
-            redirect: 'manual',
-          });
-          if (res.type !== 'opaqueredirect' && !res.ok) hasError = true;
-        } catch(e) { hasError = true; }
-      }
+      var results = await Promise.all(
+        [].map.call(dirtyForms, function(f) {
+          return fetch(url, { method: 'POST', body: new FormData(f), redirect: 'manual' })
+            .then(function(res) { return (res.type !== 'opaqueredirect' && !res.ok) ? 'error' : 'ok'; })
+            .catch(function() { return 'error'; });
+        })
+      );
+      hasError = results.indexOf('error') !== -1;
 
       if (hasError) {
         btn.disabled = false;
