@@ -47,18 +47,9 @@ const { slides } = Astro.props;
     font-weight: 700;
     color: white;
   }
-  .swiper-pagination-bullet {
-    background: white !important;
-    opacity: 0.5;
-    width: 8px;
-    height: 8px;
-    transition: all 0.3s;
-  }
-  .swiper-pagination-bullet-active {
-    opacity: 1 !important;
-    width: 24px !important;
-    border-radius: 4px !important;
-    background: #C67D5B !important;
+  #slide-progress-bars {
+    gap: 3px;
+    padding: 0 4px 4px;
   }
 </style>
 
@@ -82,22 +73,68 @@ const { slides } = Astro.props;
         </div>
       ))}
     </div>
-    <div class="swiper-pagination" style="bottom: 24px;"></div>
     <div class="swiper-button-prev" style="left: 20px;"></div>
     <div class="swiper-button-next" style="right: 20px;"></div>
   </div>
+
+  <!-- Progress bar pagination -->
+  <div id="slide-progress-bars" class="absolute bottom-0 left-0 right-0 flex z-20"></div>
 </section>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js" is:inline></script>
 <script is:inline>
-  new Swiper('.hero-swiper', {
+  const DELAY = 5500;
+  const SPEED = 900;
+  const totalSlides = document.querySelectorAll('.hero-swiper .swiper-slide').length;
+
+  // Build progress bars
+  const container = document.getElementById('slide-progress-bars');
+  const bars = [];
+  for (let i = 0; i < totalSlides; i++) {
+    const wrap = document.createElement('div');
+    wrap.className = 'flex-1 h-1 bg-white/25 cursor-pointer';
+    wrap.addEventListener('click', () => swiper.slideToLoop(i));
+    const fill = document.createElement('div');
+    fill.className = 'h-full bg-white/80 w-0';
+    fill.style.transition = 'none';
+    wrap.appendChild(fill);
+    container.appendChild(wrap);
+    bars.push(fill);
+  }
+
+  let animFrame;
+
+  function startBar(index) {
+    bars.forEach((b, i) => {
+      b.style.transition = 'none';
+      b.style.width = i < index ? '100%' : '0%';
+    });
+    const bar = bars[index];
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        bar.style.transition = `width ${DELAY}ms linear`;
+        bar.style.width = '100%';
+      });
+    });
+  }
+
+  const swiper = new Swiper('.hero-swiper', {
     loop: true,
-    speed: 900,
-    autoplay: { delay: 5500, disableOnInteraction: false },
+    speed: SPEED,
+    autoplay: { delay: DELAY, disableOnInteraction: false },
     effect: 'fade',
     fadeEffect: { crossFade: true },
-    pagination: { el: '.swiper-pagination', clickable: true },
     navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' },
+    on: {
+      slideChange() {
+        startBar(this.realIndex);
+      },
+      autoplayResume() {
+        startBar(this.realIndex);
+      },
+    }
   });
+
+  startBar(0);
 </script>
