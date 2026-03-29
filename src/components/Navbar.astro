@@ -24,20 +24,11 @@ const { showFaqs = false } = Astro.props;
           <a href="#residencias" class="block px-4 py-2 text-warm-dark hover:bg-sage/10 hover:text-sage text-sm transition-colors">Residencias</a>
           <a href="#servicios" class="block px-4 py-2 text-warm-dark hover:bg-sage/10 hover:text-sage text-sm transition-colors">Servicios</a>
           <a href="#actividades" class="block px-4 py-2 text-warm-dark hover:bg-sage/10 hover:text-sage text-sm transition-colors">Actividades</a>
-        </div>
-      </li>
-      <li><a href="#fotos" class="hover:text-white transition-colors">Fotos</a></li>
-      <!-- Nosotros dropdown -->
-      <li class="relative group">
-        <button class="flex items-center gap-1 hover:text-white transition-colors">
-          Nosotros
-          <svg class="w-3.5 h-3.5 opacity-70 group-hover:opacity-100 transition-transform group-hover:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-        </button>
-        <div class="absolute top-full left-0 mt-2 w-36 bg-white rounded-xl shadow-lg border border-warm-border py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-50">
-          <a href="#equipo" class="block px-4 py-2 text-warm-dark hover:bg-sage/10 hover:text-sage text-sm transition-colors">Equipo</a>
           <a href="#objetivos" class="block px-4 py-2 text-warm-dark hover:bg-sage/10 hover:text-sage text-sm transition-colors">Objetivos</a>
         </div>
       </li>
+      <li><a href="#fotos" class="hover:text-white transition-colors">Fotos</a></li>
+      <li><a href="#equipo" class="hover:text-white transition-colors">Equipo</a></li>
       <li><a href="#resenas" class="hover:text-white transition-colors">Reseñas</a></li>
       {showFaqs && <li><a href="#faqs" class="hover:text-white transition-colors">Preguntas</a></li>}
       <li>
