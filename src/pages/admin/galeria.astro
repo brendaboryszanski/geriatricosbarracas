@@ -9,6 +9,34 @@ if (Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
   const action = form.get('action') as string;
 
+  // --- Category actions ---
+  if (action === 'add_category') {
+    const name = (form.get('category_name') as string)?.trim();
+    if (name) {
+      const { error } = await supabaseAdmin.from('gallery_subcategories').insert({ name });
+      if (error) errorMsg = error.code === '23505' ? 'Esa categoría ya existe.' : `Error: ${error.message}`;
+      else return Astro.redirect('/admin/galeria?ok=1');
+    } else {
+      errorMsg = 'Ingresá un nombre para la categoría.';
+    }
+  }
+
+  if (action === 'delete_category') {
+    const id = form.get('category_id') as string;
+    const { error: updateError } = await supabaseAdmin
+      .from('gallery')
+      .update({ subcategory: 'Otros' })
+      .eq('subcategory', (form.get('category_name') as string));
+    if (updateError) {
+      errorMsg = `Error al desasignar fotos: ${updateError.message}`;
+    } else {
+      const { error } = await supabaseAdmin.from('gallery_subcategories').delete().eq('id', id);
+      if (error) errorMsg = `Error al eliminar categoría: ${error.message}`;
+      else return Astro.redirect('/admin/galeria?ok=1');
+    }
+  }
+
+  // --- Photo actions ---
   if (action === 'delete') {
     const id = form.get('id') as string;
     const { error } = await supabaseAdmin.from('gallery').delete().eq('id', id);
@@ -19,10 +47,7 @@ if (Astro.request.method === 'POST') {
   if (action === 'add') {
     const title = form.get('title') as string;
     const residence = form.get('residence') as string;
-    const rawSub = form.get('subcategory') as string;
-    const subcategory = rawSub === '__nueva__'
-      ? ((form.get('subcategory_nueva') as string)?.trim() || 'Otros')
-      : (rawSub || 'Otros');
+    const subcategory = (form.get('subcategory') as string) || 'Otros';
     const file = form.get('file') as File;
 
     if (file && file.size > 0) {
@@ -48,33 +73,68 @@ if (Astro.request.method === 'POST') {
     const id = form.get('id') as string;
     const title = form.get('title') as string;
     const residence = form.get('residence') as string;
-    const rawSub = form.get('subcategory') as string;
-    const subcategory = rawSub === '__nueva__'
-      ? ((form.get('subcategory_nueva') as string)?.trim() || 'Otros')
-      : (rawSub || 'Otros');
+    const subcategory = (form.get('subcategory') as string) || 'Otros';
     const { error } = await supabaseAdmin.from('gallery').update({ title, residence, subcategory }).eq('id', id);
     if (error) errorMsg = 'Error al guardar.';
     else return Astro.redirect('/admin/galeria?ok=1');
   }
 }
 
+// Fetch categories from the dedicated table
+const { data: categories } = await supabase
+  .from('gallery_subcategories')
+  .select('id, name')
+  .order('name');
+
+const categoryNames = (categories ?? []).map(c => c.name);
+
 const { data: photos } = await supabase
   .from('gallery')
   .select('id, title, image_url, residence, subcategory')
   .order('id', { ascending: false });
-
-// Existing subcategories for the dropdown (exclude "Otros" which is the default)
-const existingSubcategories = [...new Set(
-  (photos ?? []).map(p => p.subcategory).filter(s => s && s !== 'Otros')
-)].sort();
 ---
 
 <AdminLayout title="Galería" activeSection="galeria">
   <h2 class="font-heading font-800 text-2xl text-sage mb-1">Galería de fotos</h2>
-  <p class="text-warm-gray text-sm mb-8">Agregá, editá o eliminá fotos de la galería.</p>
+  <p class="text-warm-gray text-sm mb-8">Administrá categorías y fotos de la galería.</p>
 
   {successMsg && <div class="bg-green-50 border border-green-200 text-green-700 rounded-xl px-4 py-3 text-sm mb-6">{successMsg}</div>}
   {errorMsg && <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm mb-6">{errorMsg}</div>}
+
+  <!-- Categories section -->
+  <div class="bg-white rounded-2xl border border-warm-border p-6 mb-8">
+    <h3 class="font-heading font-700 text-sage mb-4">Categorías</h3>
+
+    <div class="flex flex-wrap gap-2 mb-4">
+      {(categories ?? []).map(c => (
+        <div class="flex items-center gap-1.5 bg-sage/10 text-sage rounded-full pl-4 pr-1 py-1.5 text-sm font-medium">
+          <span>{c.name}</span>
+          <form method="POST" class="inline" onsubmit="return confirm('¿Eliminar esta categoría? Las fotos asociadas quedarán como \"Otros\".')">
+            <input type="hidden" name="action" value="delete_category" />
+            <input type="hidden" name="category_id" value={c.id} />
+            <input type="hidden" name="category_name" value={c.name} />
+            <button type="submit" class="w-6 h-6 flex items-center justify-center rounded-full hover:bg-sage/20 text-sage/60 hover:text-sage transition-colors" aria-label={`Eliminar ${c.name}`}>
+              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+          </form>
+        </div>
+      ))}
+      {(categories ?? []).length === 0 && (
+        <p class="text-warm-gray text-sm italic">No hay categorías. Agregá una para organizar las fotos.</p>
+      )}
+    </div>
+
+    <form method="POST" class="flex gap-2 items-end">
+      <input type="hidden" name="action" value="add_category" />
+      <div class="flex flex-col gap-1 flex-1 max-w-xs">
+        <label class="text-sm font-medium text-warm-dark">Nueva categoría</label>
+        <input name="category_name" required placeholder="Ej: Habitaciones" class="border border-warm-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-sage focus:ring-1 focus:ring-sage" />
+      </div>
+      <button type="submit" class="bg-sage hover:bg-sage-dark text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-colors whitespace-nowrap">
+        + Agregar
+      </button>
+    </form>
+  </div>
 
   <!-- Add photo -->
   <div class="bg-white rounded-2xl border border-warm-border p-6 mb-8">
@@ -97,12 +157,10 @@ const existingSubcategories = [...new Set(
         </div>
         <div class="flex flex-col gap-1">
           <label class="text-sm font-medium text-warm-dark">Categoría</label>
-          <select name="subcategory" class="sub-select border border-warm-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-sage bg-white">
+          <select name="subcategory" class="border border-warm-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-sage bg-white">
             <option value="Otros">Otros</option>
-            {existingSubcategories.map(s => <option value={s}>{s}</option>)}
-            <option value="__nueva__">+ Nueva categoría…</option>
+            {categoryNames.map(s => <option value={s}>{s}</option>)}
           </select>
-          <input name="subcategory_nueva" placeholder="Nombre de la nueva categoría" class="sub-nueva hidden border border-warm-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-sage mt-1" />
         </div>
       </div>
 
@@ -132,12 +190,10 @@ const existingSubcategories = [...new Set(
               <option value="Le-Sa" selected={p.residence === 'Le-Sa'}>Le-Sa</option>
               <option value="Rincón del Sur" selected={p.residence === 'Rincón del Sur'}>Rincón del Sur</option>
             </select>
-            <select name="subcategory" class="sub-select border border-warm-border rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-sage bg-white w-full">
+            <select name="subcategory" class="border border-warm-border rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-sage bg-white w-full">
               <option value="Otros" selected={!p.subcategory || p.subcategory === 'Otros'}>Otros</option>
-              {existingSubcategories.map(s => <option value={s} selected={p.subcategory === s}>{s}</option>)}
-              <option value="__nueva__">+ Nueva categoría…</option>
+              {categoryNames.map(s => <option value={s} selected={p.subcategory === s}>{s}</option>)}
             </select>
-            <input name="subcategory_nueva" placeholder="Nueva categoría" class="sub-nueva hidden border border-warm-border rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-sage w-full mt-1" />
             <button type="submit" class="text-sage text-xs font-medium hover:underline text-left">Guardar</button>
           </form>
           <form method="POST" onsubmit="return confirm('¿Eliminar esta foto?')">
@@ -150,15 +206,3 @@ const existingSubcategories = [...new Set(
     ))}
   </div>
 </AdminLayout>
-
-<script is:inline>
-  document.querySelectorAll('.sub-select').forEach(sel => {
-    const form = sel.closest('form');
-    const nuevoInput = form?.querySelector('.sub-nueva');
-    if (!nuevoInput) return;
-    sel.addEventListener('change', () => {
-      nuevoInput.classList.toggle('hidden', sel.value !== '__nueva__');
-      nuevoInput.required = sel.value === '__nueva__';
-    });
-  });
-</script>

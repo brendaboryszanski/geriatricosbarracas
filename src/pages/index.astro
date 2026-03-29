@@ -26,6 +26,7 @@ const [
   { data: objectives },
   { data: contactRows },
   { data: faqs },
+  { data: galleryCategories },
 ] = await Promise.all([
   supabase.from('slider').select('*').order('order'),
   supabase.from('residences').select('*').order('id'),
@@ -36,6 +37,7 @@ const [
   supabase.from('objectives').select('*').order('id'),
   supabase.from('contact').select('*'),
   supabase.from('faqs').select('*').order('order'),
+  supabase.from('gallery_subcategories').select('name').order('name'),
 ]);
 
 const contactMap: Record<string, string> = {};
@@ -59,7 +61,7 @@ const firstSlideImage = slides?.[0]?.image_url
   <ResidenceCards residences={residences ?? []} />
   <ServicesGrid services={services ?? []} />
   <ActivitiesSection activities={activities ?? []} />
-  <GallerySection photos={photos ?? []} />
+  <GallerySection photos={photos ?? []} subcategories={(galleryCategories ?? []).map(c => c.name)} />
   <TeamSection members={members ?? []} />
   <ObjectivesSection objectives={objectives ?? []} />
   <ReviewsSection />

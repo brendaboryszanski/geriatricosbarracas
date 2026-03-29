@@ -9,20 +9,18 @@ interface Photo {
 
 interface Props {
   photos: Photo[];
+  subcategories: string[];
 }
 
-const { photos } = Astro.props;
+const { photos, subcategories } = Astro.props;
 
-// Fixed residence options
 const residenceFilters = [
   { label: 'Todas', value: 'all' },
   { label: 'Le-Sa', value: 'Le-Sa' },
   { label: 'Rincón del Sur', value: 'Rincón del Sur' },
 ];
 
-// Dynamic subcategory filters — exclude "Otros" (it's the default, not a meaningful filter)
-const rawSubcategories = [...new Set(photos.map(p => p.subcategory).filter(s => s && s !== 'Otros'))];
-const hasSubcategories = rawSubcategories.length > 0;
+const hasSubcategories = subcategories.length > 0;
 
 const PAGE_SIZE = 12;
 ---
@@ -77,7 +75,7 @@ const PAGE_SIZE = 12;
           <button data-sub="all" class="filter-btn sub-filter active px-3 py-1 rounded-full text-xs font-medium border bg-warm-dark text-white border-warm-dark transition-all">
             Todos los ambientes
           </button>
-          {rawSubcategories.map((s) => (
+          {subcategories.map((s) => (
             <button
               data-sub={s}
               class="filter-btn sub-filter px-3 py-1 rounded-full text-xs font-medium border bg-white text-warm-gray border-warm-border hover:border-warm-dark hover:text-warm-dark transition-all"
