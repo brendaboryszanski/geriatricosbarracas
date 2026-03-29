@@ -7,51 +7,122 @@ let errorMsg = '';
 
 if (Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
-  const id = form.get('id') as string;
-  const title = form.get('title') as string;
-  const description = form.get('description') as string;
+  const action = form.get('_action') as string;
 
-  const { error } = await supabase
-    .from('services')
-    .update({ title, description })
-    .eq('id', id);
+  if (action === 'add') {
+    const { error } = await supabase.from('services').insert({
+      title: form.get('title') as string,
+      description: form.get('description') as string,
+      icon: (form.get('icon') as string) || '⭐',
+      order: Number(form.get('order') ?? 99),
+    });
+    if (error) errorMsg = 'Error al agregar.';
+    else successMsg = 'Servicio agregado.';
 
-  if (error) errorMsg = 'Error al guardar.';
-  else successMsg = 'Guardado correctamente.';
+  } else if (action === 'update') {
+    const id = form.get('id') as string;
+    const { error } = await supabase.from('services').update({
+      title: form.get('title') as string,
+      description: form.get('description') as string,
+      icon: (form.get('icon') as string) || '⭐',
+      order: Number(form.get('order') ?? 99),
+    }).eq('id', id);
+    if (error) errorMsg = 'Error al guardar.';
+    else successMsg = 'Guardado correctamente.';
+
+  } else if (action === 'delete') {
+    const id = form.get('id') as string;
+    const { error } = await supabase.from('services').delete().eq('id', id);
+    if (error) errorMsg = 'Error al eliminar.';
+    else successMsg = 'Servicio eliminado.';
+  }
 }
 
-const { data: services } = await supabase
-  .from('services')
-  .select('*')
-  .order('order');
+const { data: services } = await supabase.from('services').select('*').order('order');
 ---
 
 <AdminLayout title="Servicios" activeSection="servicios">
   <h2 class="font-heading font-800 text-2xl text-sage mb-1">Servicios</h2>
-  <p class="text-warm-gray text-sm mb-8">Editá el título y descripción de cada servicio.</p>
+  <p class="text-warm-gray text-sm mb-8">Podés agregar, editar o eliminar servicios. El orden determina la posición.</p>
 
   {successMsg && <div class="bg-green-50 border border-green-200 text-green-700 rounded-xl px-4 py-3 text-sm mb-6">{successMsg}</div>}
   {errorMsg && <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm mb-6">{errorMsg}</div>}
 
-  <div class="grid sm:grid-cols-2 gap-5">
-    {services?.map((s) => (
-      <form method="POST" class="bg-white rounded-2xl border border-warm-border p-5 flex flex-col gap-3">
-        <input type="hidden" name="id" value={s.id} />
-
+  <!-- Add new -->
+  <div class="bg-white rounded-2xl border border-warm-border p-6 mb-8">
+    <h3 class="font-heading font-700 text-sage mb-4">Agregar servicio</h3>
+    <form method="POST" class="flex flex-col gap-3">
+      <input type="hidden" name="_action" value="add" />
+      <div class="grid sm:grid-cols-2 gap-3">
         <div class="flex flex-col gap-1">
           <label class="text-sm font-medium text-warm-dark">Título</label>
-          <input name="title" value={s.title} required class="border border-warm-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-sage focus:ring-1 focus:ring-sage" />
+          <input name="title" required placeholder="Ej: Atención médica" class="border border-warm-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-sage" />
         </div>
-
         <div class="flex flex-col gap-1">
-          <label class="text-sm font-medium text-warm-dark">Descripción</label>
-          <textarea name="description" rows="3" class="border border-warm-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-sage focus:ring-1 focus:ring-sage resize-none">{s.description}</textarea>
+          <label class="text-sm font-medium text-warm-dark">Emoji / Icono</label>
+          <input name="icon" placeholder="🩺" maxlength="4" class="border border-warm-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-sage" />
         </div>
-
-        <button type="submit" class="self-start bg-sage hover:bg-sage-dark text-white px-5 py-2 rounded-xl text-sm font-medium transition-colors">
-          Guardar
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-sm font-medium text-warm-dark">Descripción</label>
+        <textarea name="description" rows="2" required placeholder="Descripción breve del servicio..." class="border border-warm-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-sage resize-none"></textarea>
+      </div>
+      <div class="flex items-end gap-3">
+        <div class="flex flex-col gap-1 w-24">
+          <label class="text-sm font-medium text-warm-dark">Orden</label>
+          <input name="order" type="number" value="99" min="1" class="border border-warm-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-sage" />
+        </div>
+        <button type="submit" class="bg-sage hover:bg-sage-dark text-white px-5 py-2 rounded-xl text-sm font-medium transition-colors">
+          Agregar
         </button>
-      </form>
+      </div>
+    </form>
+  </div>
+
+  <!-- Existing -->
+  <div class="grid sm:grid-cols-2 gap-5">
+    {services?.map((s) => (
+      <div class="bg-white rounded-2xl border border-warm-border p-5 flex flex-col gap-3">
+        <form method="POST" class="flex flex-col gap-3">
+          <input type="hidden" name="_action" value="update" />
+          <input type="hidden" name="id" value={s.id} />
+
+          <div class="grid grid-cols-[1fr_auto] gap-2">
+            <div class="flex flex-col gap-1">
+              <label class="text-sm font-medium text-warm-dark">Título</label>
+              <input name="title" value={s.title} required class="border border-warm-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-sage" />
+            </div>
+            <div class="flex flex-col gap-1">
+              <label class="text-sm font-medium text-warm-dark">Icono</label>
+              <input name="icon" value={s.icon ?? ''} placeholder="⭐" maxlength="4" class="border border-warm-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-sage w-16 text-center text-lg" />
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-1">
+            <label class="text-sm font-medium text-warm-dark">Descripción</label>
+            <textarea name="description" rows="2" class="border border-warm-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-sage resize-none">{s.description}</textarea>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <div class="flex flex-col gap-1 w-20">
+              <label class="text-xs text-warm-gray">Orden</label>
+              <input name="order" type="number" value={s.order} min="1" class="border border-warm-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-sage" />
+            </div>
+            <div class="flex gap-2 mt-4">
+              <button type="submit" class="bg-sage hover:bg-sage-dark text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors">
+                Guardar
+              </button>
+              <button type="submit" form={`del-s-${s.id}`} class="bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded-xl text-sm font-medium transition-colors">
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </form>
+        <form id={`del-s-${s.id}`} method="POST" class="hidden">
+          <input type="hidden" name="_action" value="delete" />
+          <input type="hidden" name="id" value={s.id} />
+        </form>
+      </div>
     ))}
   </div>
 </AdminLayout>

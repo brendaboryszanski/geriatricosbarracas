@@ -9,10 +9,12 @@ import GallerySection from '../components/GallerySection.astro';
 import TeamSection from '../components/TeamSection.astro';
 import ObjectivesSection from '../components/ObjectivesSection.astro';
 import ReviewsSection from '../components/ReviewsSection.astro';
+import FaqsSection from '../components/FaqsSection.astro';
 import ContactSection from '../components/ContactSection.astro';
 import Footer from '../components/Footer.astro';
 import FloatingButtons from '../components/FloatingButtons.astro';
 import { supabase } from '../lib/supabase';
+import { optimizeImage } from '../lib/utils';
 
 const [
   { data: slides },
@@ -23,6 +25,7 @@ const [
   { data: members },
   { data: objectives },
   { data: contactRows },
+  { data: faqs },
 ] = await Promise.all([
   supabase.from('slider').select('*').order('order'),
   supabase.from('residences').select('*').order('id'),
@@ -32,6 +35,7 @@ const [
   supabase.from('team').select('*').order('is_owner', { ascending: false }).order('order'),
   supabase.from('objectives').select('*').order('id'),
   supabase.from('contact').select('*'),
+  supabase.from('faqs').select('*').order('order'),
 ]);
 
 const contactMap: Record<string, string> = {};
@@ -44,9 +48,12 @@ const contact = {
 };
 
 const footerText = contactMap.footer_text ?? 'Residencias para adultos mayores';
+const firstSlideImage = slides?.[0]?.image_url
+  ? optimizeImage(slides[0].image_url, 1200, 80)
+  : undefined;
 ---
 
-<Layout>
+<Layout ogImage={firstSlideImage}>
   <Navbar />
   <HeroSlider slides={slides ?? []} />
   <ResidenceCards residences={residences ?? []} />
@@ -56,6 +63,7 @@ const footerText = contactMap.footer_text ?? 'Residencias para adultos mayores';
   <TeamSection members={members ?? []} />
   <ObjectivesSection objectives={objectives ?? []} />
   <ReviewsSection />
+  <FaqsSection faqs={faqs ?? []} />
   <ContactSection contact={contact} />
   <Footer text={footerText} />
   <FloatingButtons />

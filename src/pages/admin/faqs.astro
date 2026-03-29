@@ -1,0 +1,125 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { supabase } from '../../lib/supabase';
+
+let successMsg = '';
+let errorMsg = '';
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const action = form.get('_action') as string;
+
+  if (action === 'add') {
+    const { error } = await supabase.from('faqs').insert({
+      question: form.get('question') as string,
+      answer: form.get('answer') as string,
+      order: Number(form.get('order') ?? 99),
+    });
+    if (error) errorMsg = 'Error al agregar la pregunta.';
+    else successMsg = 'Pregunta agregada.';
+
+  } else if (action === 'update') {
+    const id = form.get('id') as string;
+    const { error } = await supabase.from('faqs').update({
+      question: form.get('question') as string,
+      answer: form.get('answer') as string,
+      order: Number(form.get('order') ?? 99),
+    }).eq('id', id);
+    if (error) errorMsg = 'Error al guardar.';
+    else successMsg = 'Guardado correctamente.';
+
+  } else if (action === 'delete') {
+    const id = form.get('id') as string;
+    const { error } = await supabase.from('faqs').delete().eq('id', id);
+    if (error) errorMsg = 'Error al eliminar.';
+    else successMsg = 'Pregunta eliminada.';
+  }
+}
+
+const { data: faqs } = await supabase.from('faqs').select('*').order('order');
+---
+
+<AdminLayout title="Preguntas frecuentes" activeSection="faqs">
+  <h2 class="font-heading font-800 text-2xl text-sage mb-1">Preguntas frecuentes</h2>
+  <p class="text-warm-gray text-sm mb-8">Las preguntas que agregues aparecen en la sección de FAQs del sitio. Si no hay ninguna, la sección no se muestra.</p>
+
+  {successMsg && <div class="bg-green-50 border border-green-200 text-green-700 rounded-xl px-4 py-3 text-sm mb-6">{successMsg}</div>}
+  {errorMsg && <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm mb-6">{errorMsg}</div>}
+
+  <!-- Add new FAQ -->
+  <div class="bg-white rounded-2xl border border-warm-border p-6 mb-8">
+    <h3 class="font-heading font-700 text-sage mb-4">Agregar pregunta</h3>
+    <form method="POST" class="flex flex-col gap-3">
+      <input type="hidden" name="_action" value="add" />
+      <div class="flex flex-col gap-1">
+        <label class="text-sm font-medium text-warm-dark">Pregunta</label>
+        <input name="question" required placeholder="Ej: ¿Cómo es el proceso de ingreso?"
+          class="border border-warm-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-sage" />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-sm font-medium text-warm-dark">Respuesta</label>
+        <textarea name="answer" required rows="3" placeholder="Escribí la respuesta aquí..."
+          class="border border-warm-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-sage resize-none"></textarea>
+      </div>
+      <div class="flex flex-col gap-1 w-24">
+        <label class="text-sm font-medium text-warm-dark">Orden</label>
+        <input name="order" type="number" value="99" min="1"
+          class="border border-warm-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-sage" />
+      </div>
+      <div>
+        <button type="submit" class="bg-sage hover:bg-sage-dark text-white px-5 py-2 rounded-xl text-sm font-medium transition-colors">
+          Agregar
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Existing FAQs -->
+  {faqs && faqs.length > 0 && (
+    <div class="flex flex-col gap-4">
+      <h3 class="font-heading font-700 text-sage">Preguntas actuales</h3>
+      {faqs.map(faq => (
+        <div class="bg-white rounded-2xl border border-warm-border p-6">
+          <form method="POST" class="flex flex-col gap-3">
+            <input type="hidden" name="_action" value="update" />
+            <input type="hidden" name="id" value={faq.id} />
+            <div class="flex flex-col gap-1">
+              <label class="text-sm font-medium text-warm-dark">Pregunta</label>
+              <input name="question" value={faq.question} required
+                class="border border-warm-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-sage" />
+            </div>
+            <div class="flex flex-col gap-1">
+              <label class="text-sm font-medium text-warm-dark">Respuesta</label>
+              <textarea name="answer" required rows="3"
+                class="border border-warm-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-sage resize-none">{faq.answer}</textarea>
+            </div>
+            <div class="flex items-center justify-between gap-4">
+              <div class="flex flex-col gap-1 w-24">
+                <label class="text-sm font-medium text-warm-dark">Orden</label>
+                <input name="order" type="number" value={faq.order} min="1"
+                  class="border border-warm-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-sage" />
+              </div>
+              <div class="flex gap-2 mt-5">
+                <button type="submit" class="bg-sage hover:bg-sage-dark text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors">
+                  Guardar
+                </button>
+                <button type="submit" form={`delete-${faq.id}`}
+                  class="bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded-xl text-sm font-medium transition-colors">
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          </form>
+          <form id={`delete-${faq.id}`} method="POST" class="hidden">
+            <input type="hidden" name="_action" value="delete" />
+            <input type="hidden" name="id" value={faq.id} />
+          </form>
+        </div>
+      ))}
+    </div>
+  )}
+
+  {(!faqs || faqs.length === 0) && (
+    <p class="text-warm-gray text-sm">Todavía no hay preguntas. Agregá la primera arriba.</p>
+  )}
+</AdminLayout>

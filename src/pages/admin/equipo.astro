@@ -5,38 +5,54 @@ import { supabase } from '../../lib/supabase';
 let successMsg = '';
 let errorMsg = '';
 
+async function uploadPhoto(file: File): Promise<string | null> {
+  if (!file || file.size === 0) return null;
+  const filename = `team/${Date.now()}-${file.name.replace(/\s/g, '-')}`;
+  const { error } = await supabase.storage.from('images').upload(filename, file, { contentType: file.type });
+  if (error) return null;
+  const { data: { publicUrl } } = supabase.storage.from('images').getPublicUrl(filename);
+  return publicUrl;
+}
+
 if (Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
-  const id = form.get('id') as string;
-  const name = form.get('name') as string;
-  const role = form.get('role') as string;
-  const bio = form.get('bio') as string;
-  const is_owner = form.get('is_owner') === 'on';
-  const file = form.get('file') as File;
+  const action = form.get('_action') as string;
 
-  let photo_url: string | undefined;
+  if (action === 'add') {
+    const file = form.get('file') as File;
+    const photo_url = await uploadPhoto(file);
+    const { error } = await supabase.from('team').insert({
+      name: form.get('name') as string,
+      role: form.get('role') as string,
+      bio: form.get('bio') as string,
+      is_owner: form.get('is_owner') === 'on',
+      photo_url: photo_url ?? '',
+      order: Number(form.get('order') ?? 99),
+    });
+    if (error) errorMsg = 'Error al agregar.';
+    else successMsg = 'Miembro agregado.';
 
-  if (file && file.size > 0) {
-    const filename = `team/${Date.now()}-${file.name.replace(/\s/g, '-')}`;
-    const { error: uploadError } = await supabase.storage
-      .from('images')
-      .upload(filename, file, { contentType: file.type });
-
-    if (uploadError) {
-      errorMsg = 'Error al subir la foto.';
-    } else {
-      const { data: { publicUrl } } = supabase.storage.from('images').getPublicUrl(filename);
-      photo_url = publicUrl;
-    }
-  }
-
-  if (!errorMsg) {
-    const updateData: Record<string, unknown> = { name, role, bio, is_owner };
+  } else if (action === 'update') {
+    const id = form.get('id') as string;
+    const file = form.get('file') as File;
+    const photo_url = await uploadPhoto(file);
+    const updateData: Record<string, unknown> = {
+      name: form.get('name') as string,
+      role: form.get('role') as string,
+      bio: form.get('bio') as string,
+      is_owner: form.get('is_owner') === 'on',
+      order: Number(form.get('order') ?? 99),
+    };
     if (photo_url) updateData.photo_url = photo_url;
-
     const { error } = await supabase.from('team').update(updateData).eq('id', id);
     if (error) errorMsg = 'Error al guardar.';
     else successMsg = 'Guardado correctamente.';
+
+  } else if (action === 'delete') {
+    const id = form.get('id') as string;
+    const { error } = await supabase.from('team').delete().eq('id', id);
+    if (error) errorMsg = 'Error al eliminar.';
+    else successMsg = 'Miembro eliminado.';
   }
 }
 
@@ -49,54 +65,106 @@ const { data: members } = await supabase
 
 <AdminLayout title="Equipo" activeSection="equipo">
   <h2 class="font-heading font-800 text-2xl text-sage mb-1">Equipo</h2>
-  <p class="text-warm-gray text-sm mb-8">Editá la información de cada miembro del equipo.</p>
+  <p class="text-warm-gray text-sm mb-8">Podés agregar, editar o eliminar miembros del equipo.</p>
 
   {successMsg && <div class="bg-green-50 border border-green-200 text-green-700 rounded-xl px-4 py-3 text-sm mb-6">{successMsg}</div>}
   {errorMsg && <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm mb-6">{errorMsg}</div>}
 
+  <!-- Add new member -->
+  <div class="bg-white rounded-2xl border border-warm-border p-6 mb-8">
+    <h3 class="font-heading font-700 text-sage mb-4">Agregar miembro</h3>
+    <form method="POST" enctype="multipart/form-data" class="flex flex-col gap-3">
+      <input type="hidden" name="_action" value="add" />
+      <div class="grid sm:grid-cols-2 gap-3">
+        <div class="flex flex-col gap-1">
+          <label class="text-sm font-medium text-warm-dark">Nombre</label>
+          <input name="name" required placeholder="Nombre completo" class="border border-warm-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-sage" />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-sm font-medium text-warm-dark">Rol / Especialidad</label>
+          <input name="role" placeholder="Ej: Enfermera" class="border border-warm-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-sage" />
+        </div>
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-sm font-medium text-warm-dark">Descripción breve</label>
+        <textarea name="bio" rows="2" class="border border-warm-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-sage resize-none"></textarea>
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-sm font-medium text-warm-dark">Foto</label>
+        <input type="file" name="file" accept="image/*" class="text-sm file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-sage/10 file:text-sage file:cursor-pointer" />
+      </div>
+      <div class="flex items-center gap-4 flex-wrap">
+        <label class="flex items-center gap-2 text-sm text-warm-dark cursor-pointer">
+          <input type="checkbox" name="is_owner" class="rounded" />
+          Es dueño/a de la residencia
+        </label>
+        <div class="flex flex-col gap-1 w-20">
+          <label class="text-xs text-warm-gray">Orden</label>
+          <input name="order" type="number" value="99" min="1" class="border border-warm-border rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:border-sage" />
+        </div>
+        <button type="submit" class="bg-sage hover:bg-sage-dark text-white px-5 py-2 rounded-xl text-sm font-medium transition-colors">
+          Agregar
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Existing members -->
   <div class="flex flex-col gap-6">
     {members?.map((m) => (
-      <form method="POST" enctype="multipart/form-data" class="bg-white rounded-2xl border border-warm-border p-6 flex gap-5">
-        <input type="hidden" name="id" value={m.id} />
+      <div class="bg-white rounded-2xl border border-warm-border p-6">
+        <form method="POST" enctype="multipart/form-data" class="flex gap-5">
+          <input type="hidden" name="_action" value="update" />
+          <input type="hidden" name="id" value={m.id} />
 
-        <!-- Photo -->
-        <div class="shrink-0 flex flex-col items-center gap-2">
-          <img src={m.photo_url} alt={m.name} class="w-20 h-20 rounded-full object-cover border-2 border-warm-border" />
-          <label class="text-xs text-sage cursor-pointer hover:underline">
-            Cambiar foto
-            <input type="file" name="file" accept="image/*" class="hidden" />
-          </label>
-        </div>
-
-        <div class="flex-1 flex flex-col gap-3">
-          <div class="grid sm:grid-cols-2 gap-3">
-            <div class="flex flex-col gap-1">
-              <label class="text-sm font-medium text-warm-dark">Nombre</label>
-              <input name="name" value={m.name} required class="border border-warm-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-sage" />
-            </div>
-            <div class="flex flex-col gap-1">
-              <label class="text-sm font-medium text-warm-dark">Rol / Especialidad</label>
-              <input name="role" value={m.role} class="border border-warm-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-sage" />
-            </div>
-          </div>
-
-          <div class="flex flex-col gap-1">
-            <label class="text-sm font-medium text-warm-dark">Descripción</label>
-            <textarea name="bio" rows="2" class="border border-warm-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-sage resize-none">{m.bio}</textarea>
-          </div>
-
-          <div class="flex items-center gap-3">
-            <label class="flex items-center gap-2 text-sm text-warm-dark cursor-pointer">
-              <input type="checkbox" name="is_owner" checked={m.is_owner} class="rounded" />
-              Es dueño/a de la residencia
+          <div class="shrink-0 flex flex-col items-center gap-2">
+            <img src={m.photo_url} alt={m.name} class="w-20 h-20 rounded-full object-cover border-2 border-warm-border" />
+            <label class="text-xs text-sage cursor-pointer hover:underline text-center">
+              Cambiar foto
+              <input type="file" name="file" accept="image/*" class="hidden" />
             </label>
           </div>
 
-          <button type="submit" class="self-start bg-sage hover:bg-sage-dark text-white px-5 py-2 rounded-xl text-sm font-medium transition-colors">
-            Guardar
-          </button>
-        </div>
-      </form>
+          <div class="flex-1 flex flex-col gap-3">
+            <div class="grid sm:grid-cols-2 gap-3">
+              <div class="flex flex-col gap-1">
+                <label class="text-sm font-medium text-warm-dark">Nombre</label>
+                <input name="name" value={m.name} required class="border border-warm-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-sage" />
+              </div>
+              <div class="flex flex-col gap-1">
+                <label class="text-sm font-medium text-warm-dark">Rol</label>
+                <input name="role" value={m.role} class="border border-warm-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-sage" />
+              </div>
+            </div>
+            <div class="flex flex-col gap-1">
+              <label class="text-sm font-medium text-warm-dark">Descripción</label>
+              <textarea name="bio" rows="2" class="border border-warm-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-sage resize-none">{m.bio}</textarea>
+            </div>
+            <div class="flex items-center gap-4 flex-wrap">
+              <label class="flex items-center gap-2 text-sm text-warm-dark cursor-pointer">
+                <input type="checkbox" name="is_owner" checked={m.is_owner} class="rounded" />
+                Es dueño/a
+              </label>
+              <div class="flex flex-col gap-1 w-20">
+                <label class="text-xs text-warm-gray">Orden</label>
+                <input name="order" type="number" value={m.order} min="1" class="border border-warm-border rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:border-sage" />
+              </div>
+              <div class="flex gap-2 mt-0">
+                <button type="submit" class="bg-sage hover:bg-sage-dark text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors">
+                  Guardar
+                </button>
+                <button type="submit" form={`del-m-${m.id}`} class="bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded-xl text-sm font-medium transition-colors">
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          </div>
+        </form>
+        <form id={`del-m-${m.id}`} method="POST" class="hidden">
+          <input type="hidden" name="_action" value="delete" />
+          <input type="hidden" name="id" value={m.id} />
+        </form>
+      </div>
     ))}
   </div>
 </AdminLayout>

@@ -4,12 +4,16 @@ import '../styles/global.css';
 interface Props {
   title?: string;
   description?: string;
+  ogImage?: string;
 }
 
 const {
   title = 'Geriátricos Barracas | Le-Sa y Rincón del Sur',
-  description = 'Residencias para adultos mayores en Barracas, Capital Federal. Le-Sa y Rincón del Sur, atendidas por sus dueños.',
+  description = 'Residencias para adultos mayores en Barracas, Capital Federal. Le-Sa y Rincón del Sur, atendidas por sus dueños con calidez y profesionalismo.',
+  ogImage,
 } = Astro.props;
+
+const canonicalUrl = new URL(Astro.url.pathname, 'https://geriatricosbarracas.com.ar').href;
 ---
 
 <!doctype html>
@@ -18,13 +22,31 @@ const {
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalUrl} />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:locale" content="es_AR" />
+    {ogImage && <meta property="og:image" content={ogImage} />}
+
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+    {ogImage && <link rel="preload" as="image" href={ogImage} fetchpriority="high" />}
     <title>{title}</title>
   </head>
   <body class="bg-cream text-warm-dark">
     <slot />
+    <script is:inline>
+      const observer = new IntersectionObserver(
+        (entries) => entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } }),
+        { threshold: 0.12 }
+      );
+      document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+    </script>
   </body>
 </html>

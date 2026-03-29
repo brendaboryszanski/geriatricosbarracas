@@ -16,14 +16,14 @@ const { residences } = Astro.props;
 
 <section id="residencias" class="bg-cream py-20 px-4">
   <div class="max-w-6xl mx-auto">
-    <div class="text-center mb-12">
+    <div class="text-center mb-12 reveal">
       <h2 class="font-heading font-800 text-3xl md:text-4xl text-sage mb-3">Nuestras Residencias</h2>
       <p class="text-warm-gray text-lg max-w-xl mx-auto">Dos hogares con atención personalizada, atendidos directamente por sus dueños.</p>
     </div>
 
     <div class="grid md:grid-cols-2 gap-8">
       {residences.map((r) => (
-        <div class="bg-white rounded-2xl shadow-sm border border-warm-border overflow-hidden hover:shadow-md transition-shadow">
+        <div class="bg-white rounded-2xl shadow-sm border border-warm-border overflow-hidden hover:shadow-md transition-shadow reveal">
           <div class="bg-sage p-6">
             <h3 class="font-heading font-700 text-2xl text-white">{r.name}</h3>
             <p class="text-white/80 text-sm mt-1">📍 {r.address}</p>

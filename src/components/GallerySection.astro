@@ -1,4 +1,6 @@
 ---
+import { optimizeImage } from '../lib/utils';
+
 interface Photo {
   title: string;
   image_url: string;
@@ -18,6 +20,16 @@ const filters = [
   { label: 'Momentos', value: 'Momentos' },
 ];
 ---
+
+<style>
+  .gallery-placeholder {
+    background: linear-gradient(135deg, #e8d8c8 0%, #f5e6d3 100%);
+    transition: opacity 0.3s ease;
+  }
+  .gallery-placeholder.loaded {
+    opacity: 0;
+  }
+</style>
 
 <section id="fotos" class="bg-blush py-20 px-4">
   <div class="max-w-6xl mx-auto">
@@ -40,17 +52,22 @@ const filters = [
 
     <!-- Grid -->
     <div id="gallery-grid" class="columns-2 sm:columns-3 lg:columns-4 gap-3 space-y-3">
-      {photos.map((p) => (
+      {photos.map((p, i) => (
         <div
           class="gallery-item break-inside-avoid rounded-xl overflow-hidden cursor-pointer group"
           data-category={p.category}
+          data-index={i}
         >
           <div class="relative">
+            <div class="gallery-placeholder absolute inset-0 rounded-xl"></div>
             <img
-              src={p.image_url}
+              src={optimizeImage(p.image_url, 600, 75)}
+              data-full={optimizeImage(p.image_url, 1600, 85)}
+              data-title={p.title}
               alt={p.title}
               loading="lazy"
-              class="w-full object-cover group-hover:scale-105 transition-transform duration-300"
+              class="gallery-img w-full object-cover group-hover:scale-105 transition-transform duration-300 relative"
+              onload="this.previousElementSibling.classList.add('loaded')"
             />
             <div class="absolute inset-0 bg-warm-dark/0 group-hover:bg-warm-dark/40 transition-colors flex items-end">
               <p class="text-white text-xs font-medium px-3 pb-2 opacity-0 group-hover:opacity-100 transition-opacity">{p.title}</p>
@@ -62,12 +79,22 @@ const filters = [
   </div>
 </section>
 
+<!-- Lightbox -->
+<div id="lightbox" class="fixed inset-0 z-50 bg-black/90 hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Foto ampliada">
+  <button id="lightbox-close" class="absolute top-4 right-4 text-white/70 hover:text-white text-3xl leading-none" aria-label="Cerrar">&times;</button>
+  <button id="lightbox-prev" class="absolute left-3 top-1/2 -translate-y-1/2 text-white/70 hover:text-white text-4xl px-3 py-2" aria-label="Anterior">&#8249;</button>
+  <button id="lightbox-next" class="absolute right-3 top-1/2 -translate-y-1/2 text-white/70 hover:text-white text-4xl px-3 py-2" aria-label="Siguiente">&#8250;</button>
+  <div class="max-w-4xl max-h-full flex flex-col items-center gap-3">
+    <img id="lightbox-img" src="" alt="" class="max-h-[80vh] max-w-full rounded-xl object-contain" />
+    <p id="lightbox-title" class="text-white/80 text-sm"></p>
+  </div>
+</div>
+
 <script is:inline>
+  // Gallery filter
   document.querySelectorAll('.gallery-filter').forEach(btn => {
     btn.addEventListener('click', () => {
       const filter = btn.getAttribute('data-filter');
-
-      // Update active button style
       document.querySelectorAll('.gallery-filter').forEach(b => {
         b.classList.remove('bg-sage', 'text-white', 'border-sage');
         b.classList.add('bg-white', 'text-warm-gray', 'border-warm-border');
@@ -75,15 +102,72 @@ const filters = [
       btn.classList.add('bg-sage', 'text-white', 'border-sage');
       btn.classList.remove('bg-white', 'text-warm-gray', 'border-warm-border');
 
-      // Filter items
       document.querySelectorAll('.gallery-item').forEach(item => {
         const cat = item.getAttribute('data-category');
-        if (filter === 'all' || cat === filter) {
-          item.classList.remove('hidden');
-        } else {
-          item.classList.add('hidden');
-        }
+        item.classList.toggle('hidden', filter !== 'all' && cat !== filter);
       });
+
+      // Rebuild visible index after filter
+      updateVisibleItems();
     });
+  });
+
+  // Lightbox
+  const lightbox = document.getElementById('lightbox');
+  const lbImg = document.getElementById('lightbox-img');
+  const lbTitle = document.getElementById('lightbox-title');
+  let visibleItems = [];
+  let currentIndex = 0;
+
+  function updateVisibleItems() {
+    visibleItems = Array.from(document.querySelectorAll('.gallery-item:not(.hidden) .gallery-img'));
+  }
+  updateVisibleItems();
+
+  function openLightbox(img) {
+    updateVisibleItems();
+    currentIndex = visibleItems.indexOf(img);
+    lbImg.src = img.getAttribute('data-full') || img.src;
+    lbImg.alt = img.alt;
+    lbTitle.textContent = img.getAttribute('data-title') || '';
+    lightbox.classList.remove('hidden');
+    lightbox.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeLightbox() {
+    lightbox.classList.add('hidden');
+    lightbox.classList.remove('flex');
+    document.body.style.overflow = '';
+  }
+
+  function navigate(dir) {
+    currentIndex = (currentIndex + dir + visibleItems.length) % visibleItems.length;
+    const img = visibleItems[currentIndex];
+    lbImg.src = img.getAttribute('data-full') || img.src;
+    lbImg.alt = img.alt;
+    lbTitle.textContent = img.getAttribute('data-title') || '';
+  }
+
+  document.querySelectorAll('.gallery-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const img = item.querySelector('.gallery-img');
+      if (img) openLightbox(img);
+    });
+  });
+
+  document.getElementById('lightbox-close').addEventListener('click', closeLightbox);
+  document.getElementById('lightbox-prev').addEventListener('click', () => navigate(-1));
+  document.getElementById('lightbox-next').addEventListener('click', () => navigate(1));
+
+  lightbox.addEventListener('click', (e) => {
+    if (e.target === lightbox) closeLightbox();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (lightbox.classList.contains('hidden')) return;
+    if (e.key === 'Escape') closeLightbox();
+    if (e.key === 'ArrowLeft') navigate(-1);
+    if (e.key === 'ArrowRight') navigate(1);
   });
 </script>

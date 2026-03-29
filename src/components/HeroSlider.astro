@@ -1,4 +1,6 @@
 ---
+import { optimizeImage } from '../lib/utils';
+
 interface Slide {
   image_url: string;
   caption: string;
@@ -56,12 +58,14 @@ const { slides } = Astro.props;
 <section id="home" class="relative pt-14">
   <div class="swiper hero-swiper h-[80vh] min-h-[480px]">
     <div class="swiper-wrapper">
-      {slides.map((slide) => (
+      {slides.map((slide, i) => (
         <div class="swiper-slide relative overflow-hidden">
           <img
-            src={slide.image_url}
+            src={optimizeImage(slide.image_url, 1920, 75)}
             alt={slide.caption}
             class="w-full h-full object-cover"
+            loading={i === 0 ? 'eager' : 'lazy'}
+            fetchpriority={i === 0 ? 'high' : 'auto'}
           />
           <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-black/10 flex items-end">
             <div class="max-w-6xl mx-auto px-6 pb-20 w-full">
@@ -84,8 +88,8 @@ const { slides } = Astro.props;
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js" is:inline></script>
 <script is:inline>
-  const DELAY = 5500;
-  const SPEED = 900;
+  const DELAY = 4000;
+  const SPEED = 800;
   const totalSlides = document.querySelectorAll('.hero-swiper .swiper-slide').length;
 
   // Build progress bars
@@ -122,7 +126,7 @@ const { slides } = Astro.props;
   const swiper = new Swiper('.hero-swiper', {
     loop: true,
     speed: SPEED,
-    autoplay: { delay: DELAY, disableOnInteraction: false },
+    autoplay: { delay: DELAY, disableOnInteraction: false, pauseOnMouseEnter: true },
     effect: 'fade',
     fadeEffect: { crossFade: true },
     navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' },
