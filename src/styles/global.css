@@ -37,13 +37,7 @@ h1, h2, h3, h4, h5, h6 {
   color: white !important;
 }
 
-/* Gallery filter */
-.gallery-item {
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
-.gallery-item.hidden {
-  display: none;
-}
+/* Gallery filter — visibility managed via inline style.display in JS */
 
 /* Team card hover */
 .team-card .team-overlay {

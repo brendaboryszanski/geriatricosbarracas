@@ -37,13 +37,9 @@ const PAGE_SIZE = 12;
   .gallery-item {
     break-inside: avoid;
     margin-bottom: 12px;
-    transition: opacity 0.3s ease;
   }
-  .gallery-item.hidden { display: none; }
   .gallery-item img { transition: transform 0.5s ease; display: block; }
   .gallery-item:hover img { transform: scale(1.04); }
-  .gallery-item .overlay { opacity: 0; transition: opacity 0.3s ease; }
-  .gallery-item:hover .overlay { opacity: 1; }
 
   .filter-btn { transition: all 0.2s ease; }
   .filter-btn.active { background-color: var(--color-sage); color: white; border-color: var(--color-sage); }
@@ -92,7 +88,7 @@ const PAGE_SIZE = 12;
     <div id="gallery-grid" class="columns-2 sm:columns-3 lg:columns-4">
       {photos.map((p, i) => (
         <div
-          class="gallery-item relative overflow-hidden rounded-xl cursor-pointer"
+          class="gallery-item group relative overflow-hidden rounded-xl cursor-pointer"
           data-residence={p.residence}
           data-sub={p.subcategory}
           data-index={i}
@@ -108,7 +104,7 @@ const PAGE_SIZE = 12;
               class="gallery-img w-full object-cover rounded-xl"
               onload="this.previousElementSibling.classList.add('loaded')"
             />
-            <div class="overlay absolute inset-0 bg-warm-dark/40 rounded-xl flex items-end">
+            <div class="absolute inset-0 bg-warm-dark/40 rounded-xl flex items-end opacity-0 group-hover:opacity-100 transition-opacity duration-300">
               <p class="text-white text-xs font-medium px-3 pb-2">{p.title}</p>
             </div>
           </div>
@@ -165,7 +161,7 @@ const PAGE_SIZE = 12;
     return allItems().filter(item => {
       const res = item.getAttribute('data-residence') || 'Ambas';
       const sub = item.getAttribute('data-sub') || 'Otros';
-      const resMatch = activeResidence === 'all' || res === activeResidence || res === 'Ambas';
+      const resMatch = activeResidence === 'all' || res === activeResidence;
       const subMatch = activeSub === 'all' || sub === activeSub;
       return resMatch && subMatch;
     });
@@ -203,9 +199,9 @@ const PAGE_SIZE = 12;
     const start = (currentPage - 1) * PAGE_SIZE;
     const end = start + PAGE_SIZE;
 
-    allItems().forEach(item => item.classList.add('hidden'));
+    allItems().forEach(item => { item.style.display = 'none'; });
     items.forEach((item, i) => {
-      item.classList.toggle('hidden', i < start || i >= end);
+      item.style.display = (i >= start && i < end) ? '' : 'none';
     });
 
     const info = document.getElementById('gallery-page-info');
@@ -250,7 +246,6 @@ const PAGE_SIZE = 12;
 
   renderPage();
 
-  // Fix: images already loaded from cache won't fire onload
   document.querySelectorAll('.gallery-img').forEach(img => {
     if (img.complete) img.previousElementSibling?.classList.add('loaded');
   });
@@ -261,7 +256,7 @@ const PAGE_SIZE = 12;
   const lbTitle = document.getElementById('lightbox-title');
 
   function visibleImgs() {
-    return Array.from(document.querySelectorAll('.gallery-item:not(.hidden) .gallery-img'));
+    return Array.from(document.querySelectorAll('.gallery-item')).filter(item => item.style.display !== 'none').map(item => item.querySelector('.gallery-img')).filter(Boolean);
   }
 
   function openLightbox(img) {
