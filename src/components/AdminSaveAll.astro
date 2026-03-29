@@ -1,0 +1,31 @@
+<script is:inline>
+  document.getElementById('save-all-btn')?.addEventListener('click', async () => {
+    const btn = document.getElementById('save-all-btn');
+    const forms = document.querySelectorAll('.admin-item-form');
+    if (!forms.length) return;
+
+    btn.disabled = true;
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Guardando...';
+
+    let hasError = false;
+    for (const form of forms) {
+      try {
+        const res = await fetch(form.action || window.location.pathname, {
+          method: 'POST',
+          body: new FormData(form),
+          redirect: 'manual',
+        });
+        if (res.type !== 'opaqueredirect' && !res.ok) hasError = true;
+      } catch { hasError = true; }
+    }
+
+    if (hasError) {
+      btn.disabled = false;
+      btn.innerHTML = '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg> Error al guardar';
+      setTimeout(() => { btn.innerHTML = originalHTML; }, 2000);
+    } else {
+      window.location.href = window.location.pathname + '?ok=1';
+    }
+  });
+</script>
