@@ -1,12 +1,8 @@
 /**
- * Transforms a Supabase Storage URL to use the image render API,
- * which resizes/compresses the image on-the-fly.
+ * Returns the image URL as-is.
+ * Image transformation (render API) requires Supabase Pro plan.
+ * Parameters kept for future use when upgrading plans.
  */
-export function optimizeImage(url: string, width = 1920, quality = 75): string {
-  if (!url) return url;
-  if (!url.includes('/storage/v1/object/public/')) return url;
-  return (
-    url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/') +
-    `?width=${width}&quality=${quality}`
-  );
+export function optimizeImage(url: string, _width = 1920, _quality = 75): string {
+  return url ?? '';
 }

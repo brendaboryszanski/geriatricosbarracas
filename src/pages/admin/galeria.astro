@@ -18,31 +18,35 @@ if (Astro.request.method === 'POST') {
 
   if (action === 'add') {
     const title = form.get('title') as string;
-    const category = form.get('category') as string;
+    const residence = form.get('residence') as string;
+    const subcategory = (form.get('subcategory') as string) || 'Otros';
     const file = form.get('file') as File;
 
     if (file && file.size > 0) {
       const filename = `gallery/${Date.now()}-${file.name.replace(/\s/g, '-')}`;
-      const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
+      const { error: uploadError } = await supabaseAdmin.storage
         .from('images')
         .upload(filename, file, { contentType: file.type, upsert: false });
 
       if (uploadError) {
-        errorMsg = 'Error al subir la imagen.';
+        errorMsg = `Error al subir la imagen: ${uploadError.message}`;
       } else {
         const { data: { publicUrl } } = supabaseAdmin.storage.from('images').getPublicUrl(filename);
-        const { error } = await supabaseAdmin.from('gallery').insert({ title, category, image_url: publicUrl });
-        if (error) errorMsg = 'Error al guardar.';
+        const { error } = await supabaseAdmin.from('gallery').insert({ title, residence, subcategory, image_url: publicUrl });
+        if (error) errorMsg = `Error al guardar: ${error.message}`;
         else return Astro.redirect('/admin/galeria?ok=1');
       }
+    } else {
+      errorMsg = 'Seleccioná una imagen.';
     }
   }
 
   if (action === 'update') {
     const id = form.get('id') as string;
     const title = form.get('title') as string;
-    const category = form.get('category') as string;
-    const { error } = await supabaseAdmin.from('gallery').update({ title, category }).eq('id', id);
+    const residence = form.get('residence') as string;
+    const subcategory = (form.get('subcategory') as string) || 'Otros';
+    const { error } = await supabaseAdmin.from('gallery').update({ title, residence, subcategory }).eq('id', id);
     if (error) errorMsg = 'Error al guardar.';
     else return Astro.redirect('/admin/galeria?ok=1');
   }
@@ -50,9 +54,8 @@ if (Astro.request.method === 'POST') {
 
 const { data: photos } = await supabase
   .from('gallery')
-  .select('*')
+  .select('id, title, image_url, residence, subcategory')
   .order('id', { ascending: false });
-
 ---
 
 <AdminLayout title="Galería" activeSection="galeria">
@@ -62,13 +65,13 @@ const { data: photos } = await supabase
   {successMsg && <div class="bg-green-50 border border-green-200 text-green-700 rounded-xl px-4 py-3 text-sm mb-6">{successMsg}</div>}
   {errorMsg && <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm mb-6">{errorMsg}</div>}
 
-  <datalist id="cat-suggestions">
-    <option value="Le-Sa" />
-    <option value="Rincón del Sur" />
-    <option value="Ambas" />
+  <datalist id="sub-suggestions">
+    <option value="Otros" />
     <option value="Momentos" />
     <option value="Habitaciones" />
     <option value="Espacios comunes" />
+    <option value="Jardín" />
+    <option value="Comedor" />
   </datalist>
 
   <!-- Add photo -->
@@ -77,15 +80,23 @@ const { data: photos } = await supabase
     <form method="POST" enctype="multipart/form-data" class="flex flex-col gap-4">
       <input type="hidden" name="action" value="add" />
 
-      <div class="grid sm:grid-cols-2 gap-4">
+      <div class="grid sm:grid-cols-3 gap-4">
         <div class="flex flex-col gap-1">
-          <label class="text-sm font-medium text-warm-dark">Título de la foto</label>
+          <label class="text-sm font-medium text-warm-dark">Título</label>
           <input name="title" required placeholder="Ej: Patio exterior" class="border border-warm-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-sage focus:ring-1 focus:ring-sage" />
         </div>
         <div class="flex flex-col gap-1">
+          <label class="text-sm font-medium text-warm-dark">Residencia</label>
+          <select name="residence" required class="border border-warm-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-sage bg-white">
+            <option value="Ambas">Ambas</option>
+            <option value="Le-Sa">Le-Sa</option>
+            <option value="Rincón del Sur">Rincón del Sur</option>
+          </select>
+        </div>
+        <div class="flex flex-col gap-1">
           <label class="text-sm font-medium text-warm-dark">Categoría</label>
-          <input name="category" required list="cat-suggestions" placeholder="Ej: Le-Sa, Ambas, Habitaciones…" class="border border-warm-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-sage focus:ring-1 focus:ring-sage" />
-          <p class="text-warm-gray text-xs">Podés elegir una sugerencia o escribir la que quieras.</p>
+          <input name="subcategory" list="sub-suggestions" placeholder="Ej: Habitaciones, Momentos…" class="border border-warm-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-sage focus:ring-1 focus:ring-sage" />
+          <p class="text-warm-gray text-xs">Dejar vacío = "Otros"</p>
         </div>
       </div>
 
@@ -109,8 +120,13 @@ const { data: photos } = await supabase
           <form method="POST" class="flex flex-col gap-2">
             <input type="hidden" name="action" value="update" />
             <input type="hidden" name="id" value={p.id} />
-            <input name="title" value={p.title} class="border border-warm-border rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-sage w-full" />
-            <input name="category" value={p.category} list="cat-suggestions" class="border border-warm-border rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-sage w-full" />
+            <input name="title" value={p.title} placeholder="Título" class="border border-warm-border rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-sage w-full" />
+            <select name="residence" class="border border-warm-border rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-sage bg-white">
+              <option value="Ambas" selected={p.residence === 'Ambas'}>Ambas</option>
+              <option value="Le-Sa" selected={p.residence === 'Le-Sa'}>Le-Sa</option>
+              <option value="Rincón del Sur" selected={p.residence === 'Rincón del Sur'}>Rincón del Sur</option>
+            </select>
+            <input name="subcategory" value={p.subcategory} list="sub-suggestions" placeholder="Categoría" class="border border-warm-border rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-sage w-full" />
             <button type="submit" class="text-sage text-xs font-medium hover:underline text-left">Guardar</button>
           </form>
           <form method="POST" onsubmit="return confirm('¿Eliminar esta foto?')">

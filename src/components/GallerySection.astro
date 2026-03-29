@@ -1,11 +1,10 @@
 ---
-import { optimizeImage } from '../lib/utils';
-
 interface Photo {
   id: number;
   title: string;
   image_url: string;
-  category: string;
+  residence: string;
+  subcategory: string;
 }
 
 interface Props {
@@ -14,18 +13,16 @@ interface Props {
 
 const { photos } = Astro.props;
 
-// Dynamic categories from actual data
-// Legacy mappings for photos uploaded before the category rename
-const legacyLabels: Record<string, string> = {
-  Lesa: 'Le-Sa',
-  Rincon: 'Rincón del Sur',
-};
-
-const rawCategories = [...new Set(photos.map(p => p.category))];
-const filters = [
+// Fixed residence options
+const residenceFilters = [
   { label: 'Todas', value: 'all' },
-  ...rawCategories.map(c => ({ label: legacyLabels[c] ?? c, value: c })),
+  { label: 'Le-Sa', value: 'Le-Sa' },
+  { label: 'Rincón del Sur', value: 'Rincón del Sur' },
 ];
+
+// Dynamic subcategory filters from DB
+const rawSubcategories = [...new Set(photos.map(p => p.subcategory).filter(Boolean))];
+const hasSubcategories = rawSubcategories.length > 1;
 
 const PAGE_SIZE = 12;
 ---
@@ -37,26 +34,20 @@ const PAGE_SIZE = 12;
   }
   .gallery-placeholder.loaded { opacity: 0; }
 
-  #gallery-grid {
-    column-gap: 12px;
-  }
+  #gallery-grid { column-gap: 12px; }
   .gallery-item {
     break-inside: avoid;
     margin-bottom: 12px;
-    transition: opacity 0.3s ease, transform 0.3s ease;
-  }
-  .gallery-item.collapsed { display: none; }
-  .gallery-item.hidden { display: none; }
-  .gallery-item img {
-    transition: transform 0.5s ease;
-    display: block;
-  }
-  .gallery-item:hover img { transform: scale(1.04); }
-  .gallery-item .overlay {
-    opacity: 0;
     transition: opacity 0.3s ease;
   }
+  .gallery-item.hidden { display: none; }
+  .gallery-item img { transition: transform 0.5s ease; display: block; }
+  .gallery-item:hover img { transform: scale(1.04); }
+  .gallery-item .overlay { opacity: 0; transition: opacity 0.3s ease; }
   .gallery-item:hover .overlay { opacity: 1; }
+
+  .filter-btn { transition: all 0.2s ease; }
+  .filter-btn.active { background-color: var(--color-sage); color: white; border-color: var(--color-sage); }
 </style>
 
 <section id="fotos" class="bg-blush py-20 px-4">
@@ -66,33 +57,50 @@ const PAGE_SIZE = 12;
       <p class="text-warm-gray text-lg max-w-xl mx-auto">Espacios cálidos pensados para sentirse en casa.</p>
     </div>
 
-    <!-- Filter buttons -->
-    {filters.length > 2 && (
+    <!-- Residence filter (primary) -->
+    <div class="flex flex-wrap justify-center gap-2 mb-3">
+      {residenceFilters.map((f) => (
+        <button
+          data-residence={f.value}
+          class={`filter-btn residence-filter px-5 py-2 rounded-full text-sm font-medium border transition-all ${f.value === 'all' ? 'active' : 'bg-white text-warm-gray border-warm-border hover:border-sage hover:text-sage'}`}
+        >
+          {f.label}
+        </button>
+      ))}
+    </div>
+
+    <!-- Subcategory filter (secondary) — only if there's more than 1 -->
+    {hasSubcategories && (
       <div class="flex flex-wrap justify-center gap-2 mb-8">
-        {filters.map((f) => (
+        <button data-sub="all" class="filter-btn sub-filter active px-4 py-1.5 rounded-full text-xs font-medium border transition-all">
+          Todos los ambientes
+        </button>
+        {rawSubcategories.map((s) => (
           <button
-            data-filter={f.value}
-            class={`gallery-filter px-5 py-2 rounded-full text-sm font-medium border transition-all ${f.value === 'all' ? 'bg-sage text-white border-sage' : 'bg-white text-warm-gray border-warm-border hover:border-sage hover:text-sage'}`}
+            data-sub={s}
+            class="filter-btn sub-filter px-4 py-1.5 rounded-full text-xs font-medium border bg-white text-warm-gray border-warm-border hover:border-sage hover:text-sage"
           >
-            {f.label}
+            {s}
           </button>
         ))}
       </div>
     )}
+    {!hasSubcategories && <div class="mb-8"></div>}
 
     <!-- Masonry grid -->
     <div id="gallery-grid" class="columns-2 sm:columns-3 lg:columns-4">
       {photos.map((p, i) => (
         <div
           class="gallery-item relative overflow-hidden rounded-xl cursor-pointer"
-          data-category={p.category}
+          data-residence={p.residence}
+          data-sub={p.subcategory}
           data-index={i}
         >
           <div class="relative">
             <div class="gallery-placeholder absolute inset-0 rounded-xl"></div>
             <img
-              src={optimizeImage(p.image_url, 600, 75)}
-              data-full={optimizeImage(p.image_url, 1600, 85)}
+              src={p.image_url}
+              data-full={p.image_url}
               data-title={p.title}
               alt={p.title}
               loading="lazy"
@@ -144,7 +152,8 @@ const PAGE_SIZE = 12;
 <script is:inline>
   const PAGE_SIZE = 12;
   let currentPage = 1;
-  let activeFilter = 'all';
+  let activeResidence = 'all';
+  let activeSub = 'all';
   let lbIndex = 0;
 
   function allItems() {
@@ -153,8 +162,25 @@ const PAGE_SIZE = 12;
 
   function filteredItems() {
     return allItems().filter(item => {
-      const cat = item.getAttribute('data-category');
-      return activeFilter === 'all' || cat === activeFilter;
+      const res = item.getAttribute('data-residence') || 'Ambas';
+      const sub = item.getAttribute('data-sub') || 'Otros';
+      const resMatch = activeResidence === 'all' || res === activeResidence || res === 'Ambas';
+      const subMatch = activeSub === 'all' || sub === activeSub;
+      return resMatch && subMatch;
+    });
+  }
+
+  function setActiveBtn(selector, activeVal) {
+    document.querySelectorAll(selector).forEach(b => {
+      const isActive = b.getAttribute(selector.includes('residence') ? 'data-residence' : 'data-sub') === activeVal;
+      b.classList.toggle('active', isActive);
+      if (!isActive) {
+        b.classList.remove('bg-sage', 'text-white', 'border-sage');
+        b.classList.add('bg-white', 'text-warm-gray', 'border-warm-border');
+      } else {
+        b.classList.add('bg-sage', 'text-white', 'border-sage');
+        b.classList.remove('bg-white', 'text-warm-gray', 'border-warm-border');
+      }
     });
   }
 
@@ -171,7 +197,6 @@ const PAGE_SIZE = 12;
       item.classList.toggle('hidden', i < start || i >= end);
     });
 
-    // Update pagination UI
     const info = document.getElementById('gallery-page-info');
     const prev = document.getElementById('gallery-prev');
     const next = document.getElementById('gallery-next');
@@ -183,22 +208,27 @@ const PAGE_SIZE = 12;
     if (pagination) pagination.style.display = totalPages <= 1 ? 'none' : '';
   }
 
-  // Filter
-  document.querySelectorAll('.gallery-filter').forEach(btn => {
+  // Residence filter
+  document.querySelectorAll('.residence-filter').forEach(btn => {
     btn.addEventListener('click', () => {
-      activeFilter = btn.getAttribute('data-filter');
+      activeResidence = btn.getAttribute('data-residence');
       currentPage = 1;
-      document.querySelectorAll('.gallery-filter').forEach(b => {
-        b.classList.remove('bg-sage','text-white','border-sage');
-        b.classList.add('bg-white','text-warm-gray','border-warm-border');
-      });
-      btn.classList.add('bg-sage','text-white','border-sage');
-      btn.classList.remove('bg-white','text-warm-gray','border-warm-border');
+      setActiveBtn('.residence-filter', activeResidence);
       renderPage();
     });
   });
 
-  // Pagination buttons
+  // Subcategory filter
+  document.querySelectorAll('.sub-filter').forEach(btn => {
+    btn.addEventListener('click', () => {
+      activeSub = btn.getAttribute('data-sub');
+      currentPage = 1;
+      setActiveBtn('.sub-filter', activeSub);
+      renderPage();
+    });
+  });
+
+  // Pagination
   document.getElementById('gallery-prev')?.addEventListener('click', () => {
     if (currentPage > 1) { currentPage--; renderPage(); window.scrollTo({ top: document.getElementById('fotos').offsetTop - 80, behavior: 'smooth' }); }
   });
@@ -207,8 +237,12 @@ const PAGE_SIZE = 12;
     if (currentPage < total) { currentPage++; renderPage(); window.scrollTo({ top: document.getElementById('fotos').offsetTop - 80, behavior: 'smooth' }); }
   });
 
-  // Init
   renderPage();
+
+  // Fix: images already loaded from cache won't fire onload
+  document.querySelectorAll('.gallery-img').forEach(img => {
+    if (img.complete) img.previousElementSibling?.classList.add('loaded');
+  });
 
   // Lightbox
   const lightbox = document.getElementById('lightbox');

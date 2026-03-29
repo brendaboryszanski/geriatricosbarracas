@@ -31,7 +31,7 @@ const [
   supabase.from('residences').select('*').order('id'),
   supabase.from('services').select('*').order('order'),
   supabase.from('activities').select('*').order('order'),
-  supabase.from('gallery').select('*').order('id'),
+  supabase.from('gallery').select('id, title, image_url, residence, subcategory').order('id'),
   supabase.from('team').select('*').order('is_owner', { ascending: false }).order('order'),
   supabase.from('objectives').select('*').order('id'),
   supabase.from('contact').select('*'),
