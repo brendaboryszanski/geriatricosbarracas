@@ -46,9 +46,9 @@ const staff = members.filter(m => !m.is_owner);
 
     <!-- Staff grid -->
     {staff.length > 0 && (
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+      <div class="flex flex-wrap justify-center gap-6">
         {staff.map((m) => (
-          <div class="team-card relative rounded-2xl overflow-hidden shadow-sm border border-warm-border group cursor-pointer">
+          <div class="team-card relative rounded-2xl overflow-hidden shadow-sm border border-warm-border group cursor-pointer w-44">
             <img src={m.photo_url} alt={m.name} class="w-full h-52 object-cover" />
             <div class="p-3 bg-white">
               <h3 class="font-heading font-600 text-sage text-sm">{m.name}</h3>
