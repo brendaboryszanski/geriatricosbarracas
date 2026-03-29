@@ -57,32 +57,30 @@ const PAGE_SIZE = 12;
       <p class="text-warm-gray text-lg max-w-xl mx-auto">Espacios cálidos pensados para sentirse en casa.</p>
     </div>
 
-    <!-- Filters: residence + subcategory in a unified bar -->
-    <div class="bg-white rounded-2xl border border-warm-border p-4 mb-8 flex flex-col gap-3">
+    <!-- Filters -->
+    <div class="flex flex-col items-center gap-3 mb-8">
       <!-- Residence -->
-      <div class="flex flex-wrap items-center gap-2">
-        <span class="text-xs font-medium text-warm-gray w-20 shrink-0">Residencia</span>
+      <div class="flex flex-wrap justify-center gap-2">
         {residenceFilters.map((f) => (
           <button
             data-residence={f.value}
-            class={`filter-btn residence-filter px-4 py-1.5 rounded-full text-sm font-medium border transition-all ${f.value === 'all' ? 'active bg-sage text-white border-sage' : 'bg-transparent text-warm-gray border-warm-border hover:border-sage hover:text-sage'}`}
+            class={`filter-btn residence-filter px-5 py-2 rounded-full text-sm font-medium border transition-all ${f.value === 'all' ? 'active bg-sage text-white border-sage' : 'bg-white text-warm-gray border-warm-border hover:border-sage hover:text-sage'}`}
           >
             {f.label}
           </button>
         ))}
       </div>
 
-      <!-- Subcategory — only if more than 1 -->
+      <!-- Subcategory — smaller pills, only if more than 1 -->
       {hasSubcategories && (
-        <div class="flex flex-wrap items-center gap-2 border-t border-warm-border pt-3">
-          <span class="text-xs font-medium text-warm-gray w-20 shrink-0">Ambiente</span>
-          <button data-sub="all" class="filter-btn sub-filter active px-4 py-1.5 rounded-full text-sm font-medium border bg-sage text-white border-sage transition-all">
-            Todos
+        <div class="flex flex-wrap justify-center gap-2">
+          <button data-sub="all" class="filter-btn sub-filter active px-3 py-1 rounded-full text-xs font-medium border bg-warm-dark text-white border-warm-dark transition-all">
+            Todos los ambientes
           </button>
           {rawSubcategories.map((s) => (
             <button
               data-sub={s}
-              class="filter-btn sub-filter px-4 py-1.5 rounded-full text-sm font-medium border bg-transparent text-warm-gray border-warm-border hover:border-sage hover:text-sage transition-all"
+              class="filter-btn sub-filter px-3 py-1 rounded-full text-xs font-medium border bg-white text-warm-gray border-warm-border hover:border-warm-dark hover:text-warm-dark transition-all"
             >
               {s}
             </button>
@@ -175,15 +173,25 @@ const PAGE_SIZE = 12;
   }
 
   function setActiveBtn(selector, activeVal) {
+    const isResidence = selector.includes('residence');
     document.querySelectorAll(selector).forEach(b => {
-      const isActive = b.getAttribute(selector.includes('residence') ? 'data-residence' : 'data-sub') === activeVal;
+      const val = b.getAttribute(isResidence ? 'data-residence' : 'data-sub');
+      const isActive = val === activeVal;
       b.classList.toggle('active', isActive);
-      if (!isActive) {
-        b.classList.remove('bg-sage', 'text-white', 'border-sage');
-        b.classList.add('bg-white', 'text-warm-gray', 'border-warm-border');
+      if (isResidence) {
+        b.classList.toggle('bg-sage', isActive);
+        b.classList.toggle('text-white', isActive);
+        b.classList.toggle('border-sage', isActive);
+        b.classList.toggle('bg-white', !isActive);
+        b.classList.toggle('text-warm-gray', !isActive);
+        b.classList.toggle('border-warm-border', !isActive);
       } else {
-        b.classList.add('bg-sage', 'text-white', 'border-sage');
-        b.classList.remove('bg-white', 'text-warm-gray', 'border-warm-border');
+        b.classList.toggle('bg-warm-dark', isActive);
+        b.classList.toggle('text-white', isActive);
+        b.classList.toggle('border-warm-dark', isActive);
+        b.classList.toggle('bg-white', !isActive);
+        b.classList.toggle('text-warm-gray', !isActive);
+        b.classList.toggle('border-warm-border', !isActive);
       }
     });
   }
