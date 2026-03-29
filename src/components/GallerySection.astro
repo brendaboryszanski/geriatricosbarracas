@@ -15,7 +15,7 @@ interface Props {
 const { photos, subcategories } = Astro.props;
 
 const residenceFilters = [
-  { label: 'Todas', value: 'all' },
+  { label: 'Ambas residencias', value: 'all' },
   { label: 'Le-Sa', value: 'Le-Sa' },
   { label: 'Rincón del Sur', value: 'Rincón del Sur' },
 ];
@@ -25,10 +25,11 @@ const hasSubcategories = subcategories.length > 0;
 const PAGE_SIZE = 12;
 ---
 
-<style>
+<style is:global>
   .gallery-placeholder {
     background: linear-gradient(135deg, #e8d8c8 0%, #f5e6d3 100%);
     transition: opacity 0.4s ease;
+    pointer-events: none;
   }
   .gallery-placeholder.loaded { opacity: 0; }
 
