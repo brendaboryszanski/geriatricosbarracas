@@ -1,9 +1,9 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
-import { supabase } from '../../lib/supabase';
+import { supabase, supabaseAdmin } from '../../lib/supabase';
 
-let successMsg = '';
 let errorMsg = '';
+const successMsg = Astro.url.searchParams.get('ok') ? 'Cambios guardados correctamente.' : '';
 
 if (Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
@@ -17,7 +17,7 @@ if (Astro.request.method === 'POST') {
 
   const contactErrors = await Promise.all(
     contactUpdates.map(({ key, value }) =>
-      supabase.from('contact').update({ value }).eq('key', key)
+      supabaseAdmin.from('contact').update({ value }).eq('key', key)
     )
   );
 
@@ -31,7 +31,7 @@ if (Astro.request.method === 'POST') {
     residenceUpdates
       .filter(r => r.id)
       .map(({ id, phone }) =>
-        supabase.from('residences').update({ phone }).eq('id', id)
+        supabaseAdmin.from('residences').update({ phone }).eq('id', id)
       )
   );
 
@@ -40,7 +40,7 @@ if (Astro.request.method === 'POST') {
     residenceErrors.some(r => r.error);
 
   if (hasError) errorMsg = 'Error al guardar algunos campos.';
-  else successMsg = 'Guardado correctamente.';
+  else return Astro.redirect('/admin/contacto?ok=1');
 }
 
 const { data: contactRows } = await supabase.from('contact').select('*');

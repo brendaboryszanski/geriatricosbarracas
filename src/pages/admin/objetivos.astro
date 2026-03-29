@@ -1,9 +1,9 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
-import { supabase } from '../../lib/supabase';
+import { supabase, supabaseAdmin } from '../../lib/supabase';
 
-let successMsg = '';
 let errorMsg = '';
+const successMsg = Astro.url.searchParams.get('ok') ? 'Cambios guardados correctamente.' : '';
 
 if (Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
@@ -11,9 +11,9 @@ if (Astro.request.method === 'POST') {
   const title = form.get('title') as string;
   const description = form.get('description') as string;
 
-  const { error } = await supabase.from('objectives').update({ title, description }).eq('id', id);
+  const { error } = await supabaseAdmin.from('objectives').update({ title, description }).eq('id', id);
   if (error) errorMsg = 'Error al guardar.';
-  else successMsg = 'Guardado correctamente.';
+  else return Astro.redirect('/admin/objetivos?ok=1');
 }
 
 const { data: objectives } = await supabase

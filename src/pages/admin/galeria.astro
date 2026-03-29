@@ -1,9 +1,9 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
-import { supabase } from '../../lib/supabase';
+import { supabase, supabaseAdmin } from '../../lib/supabase';
 
-let successMsg = '';
 let errorMsg = '';
+const successMsg = Astro.url.searchParams.get('ok') ? 'Cambios guardados correctamente.' : '';
 
 if (Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
@@ -11,9 +11,9 @@ if (Astro.request.method === 'POST') {
 
   if (action === 'delete') {
     const id = form.get('id') as string;
-    const { error } = await supabase.from('gallery').delete().eq('id', id);
+    const { error } = await supabaseAdmin.from('gallery').delete().eq('id', id);
     if (error) errorMsg = 'Error al eliminar.';
-    else successMsg = 'Foto eliminada.';
+    else return Astro.redirect('/admin/galeria?ok=1');
   }
 
   if (action === 'add') {
@@ -23,17 +23,17 @@ if (Astro.request.method === 'POST') {
 
     if (file && file.size > 0) {
       const filename = `gallery/${Date.now()}-${file.name.replace(/\s/g, '-')}`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
         .from('images')
         .upload(filename, file, { contentType: file.type, upsert: false });
 
       if (uploadError) {
         errorMsg = 'Error al subir la imagen.';
       } else {
-        const { data: { publicUrl } } = supabase.storage.from('images').getPublicUrl(filename);
-        const { error } = await supabase.from('gallery').insert({ title, category, image_url: publicUrl });
+        const { data: { publicUrl } } = supabaseAdmin.storage.from('images').getPublicUrl(filename);
+        const { error } = await supabaseAdmin.from('gallery').insert({ title, category, image_url: publicUrl });
         if (error) errorMsg = 'Error al guardar.';
-        else successMsg = 'Foto agregada correctamente.';
+        else return Astro.redirect('/admin/galeria?ok=1');
       }
     }
   }
@@ -42,9 +42,9 @@ if (Astro.request.method === 'POST') {
     const id = form.get('id') as string;
     const title = form.get('title') as string;
     const category = form.get('category') as string;
-    const { error } = await supabase.from('gallery').update({ title, category }).eq('id', id);
+    const { error } = await supabaseAdmin.from('gallery').update({ title, category }).eq('id', id);
     if (error) errorMsg = 'Error al guardar.';
-    else successMsg = 'Guardado correctamente.';
+    else return Astro.redirect('/admin/galeria?ok=1');
   }
 }
 

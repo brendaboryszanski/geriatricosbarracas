@@ -1,9 +1,9 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
-import { supabase } from '../../lib/supabase';
+import { supabase, supabaseAdmin } from '../../lib/supabase';
 
-let successMsg = '';
 let errorMsg = '';
+const successMsg = Astro.url.searchParams.get('ok') ? 'Cambios guardados correctamente.' : '';
 
 if (Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
@@ -15,13 +15,13 @@ if (Astro.request.method === 'POST') {
   const amenitiesRaw = form.get('amenities') as string;
   const amenities = amenitiesRaw.split('\n').map(s => s.trim()).filter(Boolean);
 
-  const { error } = await supabase
+  const { error } = await supabaseAdmin
     .from('residences')
     .update({ name, address, phone, description, amenities })
     .eq('id', id);
 
   if (error) errorMsg = 'Error al guardar. Intentá de nuevo.';
-  else successMsg = 'Guardado correctamente.';
+  else return Astro.redirect('/admin/residencias?ok=1');
 }
 
 const { data: residences } = await supabase

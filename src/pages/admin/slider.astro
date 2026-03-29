@@ -1,9 +1,9 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
-import { supabase } from '../../lib/supabase';
+import { supabase, supabaseAdmin } from '../../lib/supabase';
 
-let successMsg = '';
 let errorMsg = '';
+const successMsg = Astro.url.searchParams.get('ok') ? 'Cambios guardados correctamente.' : '';
 
 if (Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
@@ -17,12 +17,12 @@ if (Astro.request.method === 'POST') {
 
     if (file && file.size > 0) {
       const filename = `slider/${Date.now()}-${file.name.replace(/\s/g, '-')}`;
-      const { error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabaseAdmin.storage
         .from('images')
         .upload(filename, file, { contentType: file.type });
 
       if (!uploadError) {
-        const { data: { publicUrl } } = supabase.storage.from('images').getPublicUrl(filename);
+        const { data: { publicUrl } } = supabaseAdmin.storage.from('images').getPublicUrl(filename);
         image_url = publicUrl;
       }
     }
@@ -30,9 +30,9 @@ if (Astro.request.method === 'POST') {
     const updateData: Record<string, unknown> = { caption };
     if (image_url) updateData.image_url = image_url;
 
-    const { error } = await supabase.from('slider').update(updateData).eq('id', id);
+    const { error } = await supabaseAdmin.from('slider').update(updateData).eq('id', id);
     if (error) errorMsg = 'Error al guardar.';
-    else successMsg = 'Guardado correctamente.';
+    else return Astro.redirect('/admin/slider?ok=1');
   }
 }
 

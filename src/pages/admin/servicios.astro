@@ -1,48 +1,48 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
-import { supabase } from '../../lib/supabase';
+import { supabase, supabaseAdmin } from '../../lib/supabase';
 
-let successMsg = '';
 let errorMsg = '';
+const successMsg = Astro.url.searchParams.get('ok') ? 'Cambios guardados correctamente.' : '';
 
 if (Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
   const action = form.get('_action') as string;
 
   if (action === 'add') {
-    const { data: last } = await supabase.from('services').select('order').order('order', { ascending: false }).limit(1);
+    const { data: last } = await supabaseAdmin.from('services').select('order').order('order', { ascending: false }).limit(1);
     const nextOrder = (last?.[0]?.order ?? 0) + 1;
-    const { error } = await supabase.from('services').insert({
+    const { error } = await supabaseAdmin.from('services').insert({
       title: form.get('title') as string,
       description: form.get('description') as string,
       icon: (form.get('icon') as string) || '⭐',
       order: nextOrder,
     });
     if (error) errorMsg = `Error al agregar: ${error.message}`;
-    else successMsg = 'Servicio agregado.';
+    else return Astro.redirect('/admin/servicios?ok=1');
 
   } else if (action === 'update') {
     const id = form.get('id') as string;
-    const { error } = await supabase.from('services').update({
+    const { error } = await supabaseAdmin.from('services').update({
       title: form.get('title') as string,
       description: form.get('description') as string,
       icon: (form.get('icon') as string) || '⭐',
     }).eq('id', id);
     if (error) errorMsg = `Error al guardar: ${error.message}`;
-    else successMsg = 'Guardado correctamente.';
+    else return Astro.redirect('/admin/servicios?ok=1');
 
   } else if (action === 'delete') {
     const id = form.get('id') as string;
-    const { error } = await supabase.from('services').delete().eq('id', id);
+    const { error } = await supabaseAdmin.from('services').delete().eq('id', id);
     if (error) errorMsg = `Error al eliminar: ${error.message}`;
-    else successMsg = 'Servicio eliminado.';
+    else return Astro.redirect('/admin/servicios?ok=1');
 
   } else if (action === 'reorder') {
     const ids = JSON.parse(form.get('ids') as string) as string[];
-    const updates = ids.map((id, i) => supabase.from('services').update({ order: i + 1 }).eq('id', id));
+    const updates = ids.map((id, i) => supabaseAdmin.from('services').update({ order: i + 1 }).eq('id', id));
     const results = await Promise.all(updates);
     if (results.some(r => r.error)) errorMsg = 'Error al guardar el orden.';
-    else successMsg = 'Orden guardado.';
+    else return Astro.redirect('/admin/servicios?ok=1');
   }
 }
 
