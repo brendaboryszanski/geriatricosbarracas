@@ -1,31 +1,49 @@
 <script is:inline>
-  document.getElementById('save-all-btn')?.addEventListener('click', async () => {
-    const btn = document.getElementById('save-all-btn');
-    const forms = document.querySelectorAll('.admin-item-form');
-    if (!forms.length) return;
+  (function() {
+    var forms = document.querySelectorAll('.admin-item-form');
+    forms.forEach(function(f) {
+      f.addEventListener('input', function() { f.dataset.dirty = '1'; });
+      f.addEventListener('change', function() { f.dataset.dirty = '1'; });
+    });
 
-    btn.disabled = true;
-    const originalHTML = btn.innerHTML;
-    btn.innerHTML = '<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Guardando...';
+    var btn = document.getElementById('save-all-btn');
+    if (!btn) return;
 
-    let hasError = false;
-    for (const form of forms) {
-      try {
-        const res = await fetch(form.action || window.location.pathname, {
-          method: 'POST',
-          body: new FormData(form),
-          redirect: 'manual',
-        });
-        if (res.type !== 'opaqueredirect' && !res.ok) hasError = true;
-      } catch { hasError = true; }
-    }
+    btn.addEventListener('click', async function() {
+      var dirtyForms = document.querySelectorAll('.admin-item-form[data-dirty="1"]');
+      if (!dirtyForms.length) {
+        btn.innerHTML = '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg> Sin cambios';
+        setTimeout(function() {
+          btn.innerHTML = '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg> Guardar todo';
+        }, 1500);
+        return;
+      }
 
-    if (hasError) {
-      btn.disabled = false;
-      btn.innerHTML = '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg> Error al guardar';
-      setTimeout(() => { btn.innerHTML = originalHTML; }, 2000);
-    } else {
-      window.location.href = window.location.pathname + '?ok=1';
-    }
-  });
+      btn.disabled = true;
+      var originalHTML = btn.innerHTML;
+      btn.innerHTML = '<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Guardando ' + dirtyForms.length + '...';
+
+      var url = window.location.pathname;
+      var hasError = false;
+
+      for (var i = 0; i < dirtyForms.length; i++) {
+        try {
+          var res = await fetch(url, {
+            method: 'POST',
+            body: new FormData(dirtyForms[i]),
+            redirect: 'manual',
+          });
+          if (res.type !== 'opaqueredirect' && !res.ok) hasError = true;
+        } catch(e) { hasError = true; }
+      }
+
+      if (hasError) {
+        btn.disabled = false;
+        btn.innerHTML = '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg> Error al guardar';
+        setTimeout(function() { btn.innerHTML = originalHTML; }, 2000);
+      } else {
+        window.location.href = url + '?ok=1';
+      }
+    });
+  })();
 </script>

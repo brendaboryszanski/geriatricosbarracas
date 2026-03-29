@@ -1,5 +1,6 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
+import AdminSaveAll from '../../components/AdminSaveAll.astro';
 import { supabase, supabaseAdmin } from '../../lib/supabase';
 
 let errorMsg = '';
@@ -113,7 +114,7 @@ const { data: members } = await supabase
     </form>
   </div>
 
-  <!-- Existing members — sortable (NO nested forms) -->
+  <!-- Existing members — sortable -->
   {members && members.length > 0 && (
     <div>
       <div class="flex items-center justify-between mb-3">
@@ -121,23 +122,19 @@ const { data: members } = await supabase
         <p class="text-xs text-warm-gray">Arrastrá para reordenar</p>
       </div>
 
-      <!-- Sortable list — each card has its OWN form, not nested -->
       <div id="team-sortable" class="flex flex-col gap-4 mb-4">
         {members.map((m) => (
           <div class="team-sortable-item bg-white rounded-2xl border border-warm-border p-4" data-id={m.id}>
-            <form method="POST" enctype="multipart/form-data">
+            <form method="POST" enctype="multipart/form-data" class="admin-item-form">
               <input type="hidden" name="_action" value="update" />
               <input type="hidden" name="id" value={m.id} />
               <div class="flex items-start gap-3">
-                <!-- Drag handle -->
                 <div class="drag-handle shrink-0 mt-2 cursor-grab text-warm-border hover:text-warm-gray transition-colors select-none">
                   <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M4 8h16M4 16h16"/>
                   </svg>
                 </div>
-                <!-- Photo -->
                 <img src={m.photo_url} alt={m.name} class="w-14 h-14 rounded-full object-cover border-2 border-warm-border shrink-0" />
-                <!-- Fields -->
                 <div class="flex-1 min-w-0 flex flex-col gap-2">
                   <input name="name" value={m.name} required placeholder="Nombre"
                     class="w-full border border-warm-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-sage" />
@@ -166,7 +163,6 @@ const { data: members } = await supabase
                 </div>
               </div>
             </form>
-            <!-- Delete form — separate, not nested -->
             <form id={`del-m-${m.id}`} method="POST" class="hidden">
               <input type="hidden" name="_action" value="delete" />
               <input type="hidden" name="id" value={m.id} />
@@ -175,18 +171,24 @@ const { data: members } = await supabase
         ))}
       </div>
 
-      <!-- Reorder form — separate, below the list -->
       <form method="POST" id="team-reorder-form">
         <input type="hidden" name="_action" value="reorder" />
         <input type="hidden" name="ids" id="team-reorder-ids" value={JSON.stringify(members.map(m => String(m.id)))} />
-        <button type="submit" class="bg-warm-dark hover:bg-black text-white px-5 py-2 rounded-xl text-sm font-medium transition-colors">
-          Guardar orden
-        </button>
+        <div class="flex items-center gap-3">
+          <button type="submit" class="bg-warm-dark hover:bg-black text-white px-5 py-2 rounded-xl text-sm font-medium transition-colors">
+            Guardar orden
+          </button>
+          <button id="save-all-btn" type="button" class="bg-sage hover:bg-sage-dark text-white px-5 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+            Guardar todo
+          </button>
+        </div>
       </form>
     </div>
   )}
 </AdminLayout>
 
+<AdminSaveAll />
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1/Sortable.min.js" is:inline></script>
 <script is:inline>
   const list = document.getElementById('team-sortable');

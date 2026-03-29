@@ -1,5 +1,6 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
+import AdminSaveAll from '../../components/AdminSaveAll.astro';
 import { supabase, supabaseAdmin } from '../../lib/supabase';
 
 let errorMsg = '';
@@ -39,7 +40,7 @@ const { data: residences } = await supabase
 
   <div class="flex flex-col gap-8">
     {residences?.map((r) => (
-      <form method="POST" class="bg-white rounded-2xl border border-warm-border p-6 flex flex-col gap-4">
+      <form method="POST" class="admin-item-form bg-white rounded-2xl border border-warm-border p-6 flex flex-col gap-4">
         <input type="hidden" name="id" value={r.id} />
 
         <div class="flex flex-col gap-1">
@@ -74,4 +75,15 @@ const { data: residences } = await supabase
       </form>
     ))}
   </div>
+
+  {(residences?.length ?? 0) > 1 && (
+    <div class="mt-6 flex justify-end">
+      <button id="save-all-btn" type="button" class="bg-warm-dark hover:bg-black text-white px-6 py-2.5 rounded-xl text-sm font-medium transition-colors flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+        Guardar todo
+      </button>
+    </div>
+  )}
 </AdminLayout>
+
+<AdminSaveAll />

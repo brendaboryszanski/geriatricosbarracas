@@ -1,5 +1,6 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
+import AdminSaveAll from '../../components/AdminSaveAll.astro';
 import { supabase, supabaseAdmin } from '../../lib/supabase';
 
 let errorMsg = '';
@@ -140,6 +141,7 @@ const { data: services } = await supabase.from('services').select('*').order('or
   )}
 </AdminLayout>
 
+<AdminSaveAll />
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1/Sortable.min.js" is:inline></script>
 <script is:inline>
   const list = document.getElementById('services-sortable');
