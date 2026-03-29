@@ -48,8 +48,8 @@ const staff = members.filter(m => !m.is_owner);
     {staff.length > 0 && (
       <div class="flex flex-wrap justify-center gap-6">
         {staff.map((m) => (
-          <div class="team-card relative rounded-2xl overflow-hidden shadow-sm border border-warm-border group cursor-pointer w-[calc(50%-12px)] sm:w-44">
-            <img src={m.photo_url} alt={m.name} class="w-full h-52 object-cover" />
+          <div class="team-card relative rounded-2xl overflow-hidden shadow-sm border border-warm-border group cursor-pointer w-[calc(50%-8px)] sm:w-52">
+            <img src={m.photo_url} alt={m.name} class="w-full h-64 object-cover" />
             <div class="p-3 bg-white">
               <h3 class="font-heading font-600 text-sage text-sm">{m.name}</h3>
               <p class="text-terracotta text-xs">{m.role}</p>

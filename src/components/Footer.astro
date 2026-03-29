@@ -5,7 +5,16 @@ interface Props {
 const { text = 'Residencias para adultos mayores' } = Astro.props;
 ---
 
-<footer class="bg-warm-dark py-8 px-4 text-center">
-  <p class="text-white/60 text-sm">{text}</p>
-  <p class="text-white/30 text-xs mt-2">© {new Date().getFullYear()} Geriátricos Barracas · Le-Sa y Rincón del Sur</p>
+<footer class="bg-warm-dark py-10 px-4">
+  <div class="max-w-4xl mx-auto text-center">
+    <p class="text-white/70 text-sm mb-3">{text}</p>
+    <nav class="flex flex-wrap justify-center gap-4 text-xs text-white/40 mb-4">
+      <a href="#servicios" class="hover:text-white/70 transition-colors">Servicios</a>
+      <a href="#equipo" class="hover:text-white/70 transition-colors">Equipo</a>
+      <a href="#resenas" class="hover:text-white/70 transition-colors">Reseñas</a>
+      <a href="#faqs" class="hover:text-white/70 transition-colors">Preguntas frecuentes</a>
+      <a href="#contacto" class="hover:text-white/70 transition-colors">Contacto</a>
+    </nav>
+    <p class="text-white/25 text-xs">© {new Date().getFullYear()} Geriátricos Barracas · Le-Sa y Rincón del Sur</p>
+  </div>
 </footer>
