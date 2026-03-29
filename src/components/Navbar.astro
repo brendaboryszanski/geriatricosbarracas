@@ -10,12 +10,16 @@
 
     <!-- Desktop links -->
     <ul class="hidden md:flex items-center gap-6 text-sm font-medium text-white/90">
-      <li><a href="#home" class="hover:text-white transition-colors">Presentación</a></li>
       <li><a href="#servicios" class="hover:text-white transition-colors">Servicios</a></li>
       <li><a href="#fotos" class="hover:text-white transition-colors">Fotos</a></li>
       <li><a href="#equipo" class="hover:text-white transition-colors">Equipo</a></li>
       <li><a href="#resenas" class="hover:text-white transition-colors">Reseñas</a></li>
-      <li><a href="#contacto" class="hover:text-white transition-colors">Contacto</a></li>
+      <li><a href="#faqs" class="hover:text-white transition-colors">Preguntas</a></li>
+      <li>
+        <a href="#contacto" class="bg-white/20 hover:bg-white/30 text-white px-4 py-1.5 rounded-full transition-colors font-semibold">
+          Contacto
+        </a>
+      </li>
     </ul>
 
     <!-- Mobile hamburger -->
@@ -32,12 +36,12 @@
   <!-- Mobile menu -->
   <div id="mobile-menu" class="hidden md:hidden border-t border-white/20">
     <ul class="flex flex-col px-4 pb-4 pt-2 gap-2 text-sm font-medium text-white/90">
-      <li><a href="#home" class="block py-1 hover:text-white">Presentación</a></li>
       <li><a href="#servicios" class="block py-1 hover:text-white">Servicios</a></li>
       <li><a href="#fotos" class="block py-1 hover:text-white">Fotos</a></li>
       <li><a href="#equipo" class="block py-1 hover:text-white">Equipo</a></li>
       <li><a href="#resenas" class="block py-1 hover:text-white">Reseñas</a></li>
-      <li><a href="#contacto" class="block py-1 hover:text-white">Contacto</a></li>
+      <li><a href="#faqs" class="block py-1 hover:text-white">Preguntas frecuentes</a></li>
+      <li><a href="#contacto" class="block py-1 font-semibold hover:text-white">📞 Contacto</a></li>
     </ul>
   </div>
 </nav>
@@ -55,7 +59,6 @@
     iconClose?.classList.toggle('hidden', isOpen);
   });
 
-  // Close mobile menu on link click
   menu?.querySelectorAll('a').forEach(link => {
     link.addEventListener('click', () => {
       menu.classList.add('hidden');

@@ -43,10 +43,15 @@ const canonicalUrl = new URL(Astro.url.pathname, 'https://geriatricosbarracas.co
     <slot />
     <script is:inline>
       const observer = new IntersectionObserver(
-        (entries) => entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } }),
-        { threshold: 0.12 }
+        (entries) => entries.forEach(e => {
+          if (e.isIntersecting) {
+            e.target.classList.add('visible');
+            observer.unobserve(e.target);
+          }
+        }),
+        { threshold: 0.1, rootMargin: '0px 0px -40px 0px' }
       );
-      document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+      document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale').forEach(el => observer.observe(el));
     </script>
   </body>
 </html>

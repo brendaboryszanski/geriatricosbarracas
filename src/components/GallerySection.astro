@@ -2,9 +2,10 @@
 import { optimizeImage } from '../lib/utils';
 
 interface Photo {
+  id: number;
   title: string;
   image_url: string;
-  category: 'Momentos' | 'Lesa' | 'Rincon';
+  category: string;
 }
 
 interface Props {
@@ -13,48 +14,77 @@ interface Props {
 
 const { photos } = Astro.props;
 
+// Dynamic categories from actual data
+const categoryLabels: Record<string, string> = {
+  Lesa: 'Le-Sa',
+  Rincon: 'Rincón del Sur',
+  Momentos: 'Momentos',
+};
+
+const rawCategories = [...new Set(photos.map(p => p.category))];
 const filters = [
   { label: 'Todas', value: 'all' },
-  { label: 'Le-Sa', value: 'Lesa' },
-  { label: 'Rincón del Sur', value: 'Rincon' },
-  { label: 'Momentos', value: 'Momentos' },
+  ...rawCategories.map(c => ({ label: categoryLabels[c] ?? c, value: c })),
 ];
+
+const INITIAL_COUNT = 12;
 ---
 
 <style>
   .gallery-placeholder {
     background: linear-gradient(135deg, #e8d8c8 0%, #f5e6d3 100%);
+    transition: opacity 0.4s ease;
+  }
+  .gallery-placeholder.loaded { opacity: 0; }
+
+  #gallery-grid {
+    column-gap: 12px;
+  }
+  .gallery-item {
+    break-inside: avoid;
+    margin-bottom: 12px;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+  .gallery-item.collapsed { display: none; }
+  .gallery-item.hidden { display: none; }
+  .gallery-item img {
+    transition: transform 0.5s ease;
+    display: block;
+  }
+  .gallery-item:hover img { transform: scale(1.04); }
+  .gallery-item .overlay {
+    opacity: 0;
     transition: opacity 0.3s ease;
   }
-  .gallery-placeholder.loaded {
-    opacity: 0;
-  }
+  .gallery-item:hover .overlay { opacity: 1; }
 </style>
 
 <section id="fotos" class="bg-blush py-20 px-4">
   <div class="max-w-6xl mx-auto">
-    <div class="text-center mb-10">
+    <div class="text-center mb-10 reveal">
       <h2 class="font-heading font-800 text-3xl md:text-4xl text-sage mb-3">Mirá las residencias desde adentro</h2>
       <p class="text-warm-gray text-lg max-w-xl mx-auto">Espacios cálidos pensados para sentirse en casa.</p>
     </div>
 
     <!-- Filter buttons -->
-    <div class="flex flex-wrap justify-center gap-2 mb-8">
-      {filters.map((f) => (
-        <button
-          data-filter={f.value}
-          class={`gallery-filter px-5 py-2 rounded-full text-sm font-medium border transition-all ${f.value === 'all' ? 'bg-sage text-white border-sage' : 'bg-white text-warm-gray border-warm-border hover:border-sage hover:text-sage'}`}
-        >
-          {f.label}
-        </button>
-      ))}
-    </div>
+    {filters.length > 2 && (
+      <div class="flex flex-wrap justify-center gap-2 mb-8">
+        {filters.map((f) => (
+          <button
+            data-filter={f.value}
+            class={`gallery-filter px-5 py-2 rounded-full text-sm font-medium border transition-all ${f.value === 'all' ? 'bg-sage text-white border-sage' : 'bg-white text-warm-gray border-warm-border hover:border-sage hover:text-sage'}`}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+    )}
 
-    <!-- Grid -->
-    <div id="gallery-grid" class="columns-2 sm:columns-3 lg:columns-4 gap-3 space-y-3">
+    <!-- Masonry grid -->
+    <div id="gallery-grid" class="columns-2 sm:columns-3 lg:columns-4">
       {photos.map((p, i) => (
         <div
-          class="gallery-item break-inside-avoid rounded-xl overflow-hidden cursor-pointer group"
+          class={`gallery-item relative overflow-hidden rounded-xl cursor-pointer ${i >= INITIAL_COUNT ? 'collapsed' : ''}`}
           data-category={p.category}
           data-index={i}
         >
@@ -66,67 +96,136 @@ const filters = [
               data-title={p.title}
               alt={p.title}
               loading="lazy"
-              class="gallery-img w-full object-cover group-hover:scale-105 transition-transform duration-300 relative"
+              class="gallery-img w-full object-cover rounded-xl"
               onload="this.previousElementSibling.classList.add('loaded')"
             />
-            <div class="absolute inset-0 bg-warm-dark/0 group-hover:bg-warm-dark/40 transition-colors flex items-end">
-              <p class="text-white text-xs font-medium px-3 pb-2 opacity-0 group-hover:opacity-100 transition-opacity">{p.title}</p>
+            <div class="overlay absolute inset-0 bg-warm-dark/40 rounded-xl flex items-end">
+              <p class="text-white text-xs font-medium px-3 pb-2">{p.title}</p>
             </div>
           </div>
         </div>
       ))}
     </div>
+
+    <!-- Ver más -->
+    {photos.length > INITIAL_COUNT && (
+      <div id="gallery-more-wrap" class="text-center mt-8">
+        <button
+          id="gallery-toggle"
+          data-expanded="false"
+          class="inline-flex items-center gap-2 bg-white border border-warm-border text-warm-dark hover:border-sage hover:text-sage px-6 py-3 rounded-full text-sm font-medium transition-all"
+        >
+          <span id="gallery-toggle-label">Ver más fotos</span>
+          <svg id="gallery-toggle-icon" class="w-4 h-4 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </button>
+      </div>
+    )}
   </div>
 </section>
 
 <!-- Lightbox -->
-<div id="lightbox" class="fixed inset-0 z-50 bg-black/90 hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Foto ampliada">
-  <button id="lightbox-close" class="absolute top-4 right-4 text-white/70 hover:text-white text-3xl leading-none" aria-label="Cerrar">&times;</button>
-  <button id="lightbox-prev" class="absolute left-3 top-1/2 -translate-y-1/2 text-white/70 hover:text-white text-4xl px-3 py-2" aria-label="Anterior">&#8249;</button>
-  <button id="lightbox-next" class="absolute right-3 top-1/2 -translate-y-1/2 text-white/70 hover:text-white text-4xl px-3 py-2" aria-label="Siguiente">&#8250;</button>
-  <div class="max-w-4xl max-h-full flex flex-col items-center gap-3">
-    <img id="lightbox-img" src="" alt="" class="max-h-[80vh] max-w-full rounded-xl object-contain" />
-    <p id="lightbox-title" class="text-white/80 text-sm"></p>
+<div id="lightbox" class="fixed inset-0 z-50 bg-black/92 hidden items-center justify-center p-4" role="dialog" aria-modal="true">
+  <button id="lightbox-close" class="absolute top-4 right-4 text-white/60 hover:text-white transition-colors" aria-label="Cerrar">
+    <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+  </button>
+  <button id="lightbox-prev" class="absolute left-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition-colors p-2" aria-label="Anterior">
+    <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+  </button>
+  <button id="lightbox-next" class="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition-colors p-2" aria-label="Siguiente">
+    <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+  </button>
+  <div class="flex flex-col items-center gap-3 max-w-4xl w-full">
+    <img id="lightbox-img" src="" alt="" class="max-h-[82vh] max-w-full rounded-xl object-contain shadow-2xl" />
+    <p id="lightbox-title" class="text-white/70 text-sm"></p>
   </div>
 </div>
 
 <script is:inline>
-  // Gallery filter
+  const INITIAL = 12;
+  let currentIndex = 0;
+
+  function visibleImgs() {
+    return Array.from(document.querySelectorAll('.gallery-item:not(.hidden):not(.collapsed) .gallery-img'));
+  }
+
+  // Filter
   document.querySelectorAll('.gallery-filter').forEach(btn => {
     btn.addEventListener('click', () => {
       const filter = btn.getAttribute('data-filter');
       document.querySelectorAll('.gallery-filter').forEach(b => {
-        b.classList.remove('bg-sage', 'text-white', 'border-sage');
-        b.classList.add('bg-white', 'text-warm-gray', 'border-warm-border');
+        b.classList.remove('bg-sage','text-white','border-sage');
+        b.classList.add('bg-white','text-warm-gray','border-warm-border');
       });
-      btn.classList.add('bg-sage', 'text-white', 'border-sage');
-      btn.classList.remove('bg-white', 'text-warm-gray', 'border-warm-border');
+      btn.classList.add('bg-sage','text-white','border-sage');
+      btn.classList.remove('bg-white','text-warm-gray','border-warm-border');
 
+      // Reset expand state
+      const toggle = document.getElementById('gallery-toggle');
+      if (toggle) toggle.setAttribute('data-expanded','false');
+      const icon = document.getElementById('gallery-toggle-icon');
+      if (icon) icon.style.transform = '';
+      const label = document.getElementById('gallery-toggle-label');
+      if (label) label.textContent = 'Ver más fotos';
+
+      let shown = 0;
       document.querySelectorAll('.gallery-item').forEach(item => {
         const cat = item.getAttribute('data-category');
-        item.classList.toggle('hidden', filter !== 'all' && cat !== filter);
+        const matches = filter === 'all' || cat === filter;
+        if (!matches) {
+          item.classList.add('hidden');
+          item.classList.remove('collapsed');
+        } else {
+          item.classList.remove('hidden');
+          shown++;
+          // collapse extras only when showing all
+          if (filter === 'all' && shown > INITIAL) {
+            item.classList.add('collapsed');
+          } else {
+            item.classList.remove('collapsed');
+          }
+        }
       });
 
-      // Rebuild visible index after filter
-      updateVisibleItems();
+      const wrap = document.getElementById('gallery-more-wrap');
+      if (wrap) {
+        const hasCollapsed = document.querySelectorAll('.gallery-item.collapsed').length > 0;
+        wrap.style.display = hasCollapsed ? '' : 'none';
+      }
     });
+  });
+
+  // Toggle ver más/menos
+  document.getElementById('gallery-toggle')?.addEventListener('click', function() {
+    const expanded = this.getAttribute('data-expanded') === 'true';
+    const icon = document.getElementById('gallery-toggle-icon');
+    const label = document.getElementById('gallery-toggle-label');
+
+    if (!expanded) {
+      document.querySelectorAll('.gallery-item.collapsed').forEach(i => i.classList.remove('collapsed'));
+      this.setAttribute('data-expanded','true');
+      if (label) label.textContent = 'Ver menos';
+      if (icon) icon.style.transform = 'rotate(180deg)';
+    } else {
+      let shown = 0;
+      document.querySelectorAll('.gallery-item:not(.hidden)').forEach(item => {
+        shown++;
+        if (shown > INITIAL) item.classList.add('collapsed');
+      });
+      this.setAttribute('data-expanded','false');
+      if (label) label.textContent = 'Ver más fotos';
+      if (icon) icon.style.transform = '';
+    }
   });
 
   // Lightbox
   const lightbox = document.getElementById('lightbox');
   const lbImg = document.getElementById('lightbox-img');
   const lbTitle = document.getElementById('lightbox-title');
-  let visibleItems = [];
-  let currentIndex = 0;
-
-  function updateVisibleItems() {
-    visibleItems = Array.from(document.querySelectorAll('.gallery-item:not(.hidden) .gallery-img'));
-  }
-  updateVisibleItems();
 
   function openLightbox(img) {
-    updateVisibleItems();
-    currentIndex = visibleItems.indexOf(img);
+    currentIndex = visibleImgs().indexOf(img);
     lbImg.src = img.getAttribute('data-full') || img.src;
     lbImg.alt = img.alt;
     lbTitle.textContent = img.getAttribute('data-title') || '';
@@ -142,8 +241,9 @@ const filters = [
   }
 
   function navigate(dir) {
-    currentIndex = (currentIndex + dir + visibleItems.length) % visibleItems.length;
-    const img = visibleItems[currentIndex];
+    const imgs = visibleImgs();
+    currentIndex = (currentIndex + dir + imgs.length) % imgs.length;
+    const img = imgs[currentIndex];
     lbImg.src = img.getAttribute('data-full') || img.src;
     lbImg.alt = img.alt;
     lbTitle.textContent = img.getAttribute('data-title') || '';
@@ -159,12 +259,8 @@ const filters = [
   document.getElementById('lightbox-close').addEventListener('click', closeLightbox);
   document.getElementById('lightbox-prev').addEventListener('click', () => navigate(-1));
   document.getElementById('lightbox-next').addEventListener('click', () => navigate(1));
-
-  lightbox.addEventListener('click', (e) => {
-    if (e.target === lightbox) closeLightbox();
-  });
-
-  document.addEventListener('keydown', (e) => {
+  lightbox.addEventListener('click', e => { if (e.target === lightbox) closeLightbox(); });
+  document.addEventListener('keydown', e => {
     if (lightbox.classList.contains('hidden')) return;
     if (e.key === 'Escape') closeLightbox();
     if (e.key === 'ArrowLeft') navigate(-1);

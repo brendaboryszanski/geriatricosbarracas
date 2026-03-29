@@ -23,9 +23,9 @@ const defaultIcons: Record<number, string> = {
       <p class="text-warm-gray text-lg max-w-xl mx-auto">Servicios profesionales para el bienestar integral de cada residente.</p>
     </div>
 
-    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 stagger">
       {services.map((s, i) => (
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-warm-border hover:shadow-md hover:-translate-y-1 transition-all">
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-warm-border hover:shadow-md hover:-translate-y-1 transition-all reveal-scale">
           <div class="text-3xl mb-4">{s.icon || defaultIcons[i] || '⭐'}</div>
           <h3 class="font-heading font-700 text-sage text-lg mb-2">{s.title}</h3>
           <p class="text-warm-gray text-sm leading-relaxed">{s.description}</p>
