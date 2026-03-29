@@ -10,12 +10,14 @@ if (Astro.request.method === 'POST') {
   const action = form.get('_action') as string;
 
   if (action === 'add') {
+    const { data: existing } = await supabase.from('faqs').select('order').order('order', { ascending: false }).limit(1);
+    const nextOrder = (existing?.[0]?.order ?? 0) + 1;
     const { error } = await supabase.from('faqs').insert({
       question: form.get('question') as string,
       answer: form.get('answer') as string,
-      order: Number(form.get('order') ?? 99),
+      order: nextOrder,
     });
-    if (error) errorMsg = 'Error al agregar la pregunta.';
+    if (error) errorMsg = `Error al agregar: ${error.message}`;
     else successMsg = 'Pregunta agregada.';
 
   } else if (action === 'update') {
@@ -23,16 +25,22 @@ if (Astro.request.method === 'POST') {
     const { error } = await supabase.from('faqs').update({
       question: form.get('question') as string,
       answer: form.get('answer') as string,
-      order: Number(form.get('order') ?? 99),
     }).eq('id', id);
-    if (error) errorMsg = 'Error al guardar.';
+    if (error) errorMsg = `Error al guardar: ${error.message}`;
     else successMsg = 'Guardado correctamente.';
 
   } else if (action === 'delete') {
     const id = form.get('id') as string;
     const { error } = await supabase.from('faqs').delete().eq('id', id);
-    if (error) errorMsg = 'Error al eliminar.';
+    if (error) errorMsg = `Error al eliminar: ${error.message}`;
     else successMsg = 'Pregunta eliminada.';
+
+  } else if (action === 'reorder') {
+    const ids = JSON.parse(form.get('ids') as string) as string[];
+    const updates = ids.map((id, i) => supabase.from('faqs').update({ order: i + 1 }).eq('id', id));
+    const results = await Promise.all(updates);
+    if (results.some(r => r.error)) errorMsg = 'Error al guardar el orden.';
+    else successMsg = 'Orden guardado.';
   }
 }
 
@@ -41,7 +49,7 @@ const { data: faqs } = await supabase.from('faqs').select('*').order('order');
 
 <AdminLayout title="Preguntas frecuentes" activeSection="faqs">
   <h2 class="font-heading font-800 text-2xl text-sage mb-1">Preguntas frecuentes</h2>
-  <p class="text-warm-gray text-sm mb-8">Las preguntas que agregues aparecen en la sección de FAQs del sitio. Si no hay ninguna, la sección no se muestra.</p>
+  <p class="text-warm-gray text-sm mb-8">Las preguntas que agregues aparecen en el sitio. Si no hay ninguna, la sección se oculta.</p>
 
   {successMsg && <div class="bg-green-50 border border-green-200 text-green-700 rounded-xl px-4 py-3 text-sm mb-6">{successMsg}</div>}
   {errorMsg && <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm mb-6">{errorMsg}</div>}
@@ -61,11 +69,6 @@ const { data: faqs } = await supabase.from('faqs').select('*').order('order');
         <textarea name="answer" required rows="3" placeholder="Escribí la respuesta aquí..."
           class="border border-warm-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-sage resize-none"></textarea>
       </div>
-      <div class="flex flex-col gap-1 w-24">
-        <label class="text-sm font-medium text-warm-dark">Orden</label>
-        <input name="order" type="number" value="99" min="1"
-          class="border border-warm-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-sage" />
-      </div>
       <div>
         <button type="submit" class="bg-sage hover:bg-sage-dark text-white px-5 py-2 rounded-xl text-sm font-medium transition-colors">
           Agregar
@@ -74,48 +77,60 @@ const { data: faqs } = await supabase.from('faqs').select('*').order('order');
     </form>
   </div>
 
-  <!-- Existing FAQs -->
+  <!-- Existing FAQs — sortable -->
   {faqs && faqs.length > 0 && (
-    <div class="flex flex-col gap-4">
-      <h3 class="font-heading font-700 text-sage">Preguntas actuales</h3>
-      {faqs.map(faq => (
-        <div class="bg-white rounded-2xl border border-warm-border p-6">
-          <form method="POST" class="flex flex-col gap-3">
-            <input type="hidden" name="_action" value="update" />
-            <input type="hidden" name="id" value={faq.id} />
-            <div class="flex flex-col gap-1">
-              <label class="text-sm font-medium text-warm-dark">Pregunta</label>
-              <input name="question" value={faq.question} required
-                class="border border-warm-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-sage" />
-            </div>
-            <div class="flex flex-col gap-1">
-              <label class="text-sm font-medium text-warm-dark">Respuesta</label>
-              <textarea name="answer" required rows="3"
-                class="border border-warm-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-sage resize-none">{faq.answer}</textarea>
-            </div>
-            <div class="flex items-center justify-between gap-4">
-              <div class="flex flex-col gap-1 w-24">
-                <label class="text-sm font-medium text-warm-dark">Orden</label>
-                <input name="order" type="number" value={faq.order} min="1"
-                  class="border border-warm-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-sage" />
+    <div>
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="font-heading font-700 text-sage">Preguntas actuales</h3>
+        <p class="text-xs text-warm-gray">Arrastrá para reordenar</p>
+      </div>
+
+      <form method="POST" id="reorder-form">
+        <input type="hidden" name="_action" value="reorder" />
+        <input type="hidden" name="ids" id="reorder-ids" value={JSON.stringify(faqs.map(f => String(f.id)))} />
+        <div id="faq-sortable" class="flex flex-col gap-3 mb-4">
+          {faqs.map(faq => (
+            <div class="faq-sortable-item bg-white rounded-2xl border border-warm-border" data-id={faq.id}>
+              <!-- Drag handle + inline edit -->
+              <div class="flex items-start gap-3 p-4">
+                <div class="drag-handle shrink-0 mt-1 cursor-grab text-warm-border hover:text-warm-gray transition-colors select-none" title="Arrastrá para reordenar">
+                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 8h16M4 16h16"/>
+                  </svg>
+                </div>
+                <div class="flex-1 flex flex-col gap-2">
+                  <form method="POST">
+                    <input type="hidden" name="_action" value="update" />
+                    <input type="hidden" name="id" value={faq.id} />
+                    <div class="flex flex-col gap-2">
+                      <input name="question" value={faq.question} required
+                        class="border border-warm-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-sage font-medium" />
+                      <textarea name="answer" required rows="2"
+                        class="border border-warm-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-sage resize-none text-warm-gray">{faq.answer}</textarea>
+                      <div class="flex gap-2">
+                        <button type="submit" class="bg-sage hover:bg-sage-dark text-white px-4 py-1.5 rounded-xl text-xs font-medium transition-colors">
+                          Guardar
+                        </button>
+                        <button type="submit" form={`del-faq-${faq.id}`}
+                          class="bg-red-50 hover:bg-red-100 text-red-600 px-4 py-1.5 rounded-xl text-xs font-medium transition-colors">
+                          Eliminar
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+                  <form id={`del-faq-${faq.id}`} method="POST" class="hidden">
+                    <input type="hidden" name="_action" value="delete" />
+                    <input type="hidden" name="id" value={faq.id} />
+                  </form>
+                </div>
               </div>
-              <div class="flex gap-2 mt-5">
-                <button type="submit" class="bg-sage hover:bg-sage-dark text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors">
-                  Guardar
-                </button>
-                <button type="submit" form={`delete-${faq.id}`}
-                  class="bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded-xl text-sm font-medium transition-colors">
-                  Eliminar
-                </button>
-              </div>
             </div>
-          </form>
-          <form id={`delete-${faq.id}`} method="POST" class="hidden">
-            <input type="hidden" name="_action" value="delete" />
-            <input type="hidden" name="id" value={faq.id} />
-          </form>
+          ))}
         </div>
-      ))}
+        <button type="submit" class="bg-warm-dark hover:bg-black text-white px-5 py-2 rounded-xl text-sm font-medium transition-colors">
+          Guardar orden
+        </button>
+      </form>
     </div>
   )}
 
@@ -123,3 +138,19 @@ const { data: faqs } = await supabase.from('faqs').select('*').order('order');
     <p class="text-warm-gray text-sm">Todavía no hay preguntas. Agregá la primera arriba.</p>
   )}
 </AdminLayout>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1/Sortable.min.js" is:inline></script>
+<script is:inline>
+  const list = document.getElementById('faq-sortable');
+  const idsInput = document.getElementById('reorder-ids');
+  if (list && idsInput) {
+    new Sortable(list, {
+      handle: '.drag-handle',
+      animation: 150,
+      onEnd() {
+        const ids = [...list.querySelectorAll('[data-id]')].map(el => el.dataset.id);
+        idsInput.value = JSON.stringify(ids);
+      }
+    });
+  }
+</script>

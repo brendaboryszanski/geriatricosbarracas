@@ -10,13 +10,15 @@ if (Astro.request.method === 'POST') {
   const action = form.get('_action') as string;
 
   if (action === 'add') {
+    const { data: last } = await supabase.from('services').select('order').order('order', { ascending: false }).limit(1);
+    const nextOrder = (last?.[0]?.order ?? 0) + 1;
     const { error } = await supabase.from('services').insert({
       title: form.get('title') as string,
       description: form.get('description') as string,
       icon: (form.get('icon') as string) || '⭐',
-      order: Number(form.get('order') ?? 99),
+      order: nextOrder,
     });
-    if (error) errorMsg = 'Error al agregar.';
+    if (error) errorMsg = `Error al agregar: ${error.message}`;
     else successMsg = 'Servicio agregado.';
 
   } else if (action === 'update') {
@@ -25,16 +27,22 @@ if (Astro.request.method === 'POST') {
       title: form.get('title') as string,
       description: form.get('description') as string,
       icon: (form.get('icon') as string) || '⭐',
-      order: Number(form.get('order') ?? 99),
     }).eq('id', id);
-    if (error) errorMsg = 'Error al guardar.';
+    if (error) errorMsg = `Error al guardar: ${error.message}`;
     else successMsg = 'Guardado correctamente.';
 
   } else if (action === 'delete') {
     const id = form.get('id') as string;
     const { error } = await supabase.from('services').delete().eq('id', id);
-    if (error) errorMsg = 'Error al eliminar.';
+    if (error) errorMsg = `Error al eliminar: ${error.message}`;
     else successMsg = 'Servicio eliminado.';
+
+  } else if (action === 'reorder') {
+    const ids = JSON.parse(form.get('ids') as string) as string[];
+    const updates = ids.map((id, i) => supabase.from('services').update({ order: i + 1 }).eq('id', id));
+    const results = await Promise.all(updates);
+    if (results.some(r => r.error)) errorMsg = 'Error al guardar el orden.';
+    else successMsg = 'Orden guardado.';
   }
 }
 
@@ -43,7 +51,7 @@ const { data: services } = await supabase.from('services').select('*').order('or
 
 <AdminLayout title="Servicios" activeSection="servicios">
   <h2 class="font-heading font-800 text-2xl text-sage mb-1">Servicios</h2>
-  <p class="text-warm-gray text-sm mb-8">Podés agregar, editar o eliminar servicios. El orden determina la posición.</p>
+  <p class="text-warm-gray text-sm mb-8">Podés agregar, editar o eliminar servicios. Arrastrá para reordenar.</p>
 
   {successMsg && <div class="bg-green-50 border border-green-200 text-green-700 rounded-xl px-4 py-3 text-sm mb-6">{successMsg}</div>}
   {errorMsg && <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm mb-6">{errorMsg}</div>}
@@ -53,25 +61,21 @@ const { data: services } = await supabase.from('services').select('*').order('or
     <h3 class="font-heading font-700 text-sage mb-4">Agregar servicio</h3>
     <form method="POST" class="flex flex-col gap-3">
       <input type="hidden" name="_action" value="add" />
-      <div class="grid sm:grid-cols-2 gap-3">
+      <div class="grid sm:grid-cols-[1fr_auto] gap-3">
         <div class="flex flex-col gap-1">
           <label class="text-sm font-medium text-warm-dark">Título</label>
           <input name="title" required placeholder="Ej: Atención médica" class="border border-warm-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-sage" />
         </div>
         <div class="flex flex-col gap-1">
-          <label class="text-sm font-medium text-warm-dark">Emoji / Icono</label>
-          <input name="icon" placeholder="🩺" maxlength="4" class="border border-warm-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-sage" />
+          <label class="text-sm font-medium text-warm-dark">Emoji</label>
+          <input name="icon" placeholder="🩺" maxlength="4" class="border border-warm-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-sage w-16 text-center text-lg" />
         </div>
       </div>
       <div class="flex flex-col gap-1">
         <label class="text-sm font-medium text-warm-dark">Descripción</label>
-        <textarea name="description" rows="2" required placeholder="Descripción breve del servicio..." class="border border-warm-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-sage resize-none"></textarea>
+        <textarea name="description" rows="2" required class="border border-warm-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-sage resize-none"></textarea>
       </div>
-      <div class="flex items-end gap-3">
-        <div class="flex flex-col gap-1 w-24">
-          <label class="text-sm font-medium text-warm-dark">Orden</label>
-          <input name="order" type="number" value="99" min="1" class="border border-warm-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-sage" />
-        </div>
+      <div>
         <button type="submit" class="bg-sage hover:bg-sage-dark text-white px-5 py-2 rounded-xl text-sm font-medium transition-colors">
           Agregar
         </button>
@@ -79,50 +83,70 @@ const { data: services } = await supabase.from('services').select('*').order('or
     </form>
   </div>
 
-  <!-- Existing -->
-  <div class="grid sm:grid-cols-2 gap-5">
-    {services?.map((s) => (
-      <div class="bg-white rounded-2xl border border-warm-border p-5 flex flex-col gap-3">
-        <form method="POST" class="flex flex-col gap-3">
-          <input type="hidden" name="_action" value="update" />
-          <input type="hidden" name="id" value={s.id} />
-
-          <div class="grid grid-cols-[1fr_auto] gap-2">
-            <div class="flex flex-col gap-1">
-              <label class="text-sm font-medium text-warm-dark">Título</label>
-              <input name="title" value={s.title} required class="border border-warm-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-sage" />
-            </div>
-            <div class="flex flex-col gap-1">
-              <label class="text-sm font-medium text-warm-dark">Icono</label>
-              <input name="icon" value={s.icon ?? ''} placeholder="⭐" maxlength="4" class="border border-warm-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-sage w-16 text-center text-lg" />
-            </div>
-          </div>
-
-          <div class="flex flex-col gap-1">
-            <label class="text-sm font-medium text-warm-dark">Descripción</label>
-            <textarea name="description" rows="2" class="border border-warm-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-sage resize-none">{s.description}</textarea>
-          </div>
-
-          <div class="flex items-center gap-3">
-            <div class="flex flex-col gap-1 w-20">
-              <label class="text-xs text-warm-gray">Orden</label>
-              <input name="order" type="number" value={s.order} min="1" class="border border-warm-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-sage" />
-            </div>
-            <div class="flex gap-2 mt-4">
-              <button type="submit" class="bg-sage hover:bg-sage-dark text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors">
-                Guardar
-              </button>
-              <button type="submit" form={`del-s-${s.id}`} class="bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded-xl text-sm font-medium transition-colors">
-                Eliminar
-              </button>
-            </div>
-          </div>
-        </form>
-        <form id={`del-s-${s.id}`} method="POST" class="hidden">
-          <input type="hidden" name="_action" value="delete" />
-          <input type="hidden" name="id" value={s.id} />
-        </form>
+  <!-- Existing — sortable -->
+  {services && services.length > 0 && (
+    <div>
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="font-heading font-700 text-sage">Servicios actuales</h3>
+        <p class="text-xs text-warm-gray">Arrastrá para reordenar</p>
       </div>
-    ))}
-  </div>
+
+      <form method="POST" id="services-reorder-form">
+        <input type="hidden" name="_action" value="reorder" />
+        <input type="hidden" name="ids" id="services-reorder-ids" value={JSON.stringify(services.map(s => String(s.id)))} />
+
+        <div id="services-sortable" class="flex flex-col gap-3 mb-4">
+          {services.map((s) => (
+            <div class="services-sortable-item bg-white rounded-2xl border border-warm-border p-4" data-id={s.id}>
+              <div class="flex items-start gap-3">
+                <div class="drag-handle shrink-0 mt-1 cursor-grab text-warm-border hover:text-warm-gray transition-colors select-none">
+                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 8h16M4 16h16"/>
+                  </svg>
+                </div>
+                <span class="text-2xl shrink-0 mt-0.5">{s.icon || '⭐'}</span>
+                <form method="POST" class="flex-1 flex flex-col gap-2">
+                  <input type="hidden" name="_action" value="update" />
+                  <input type="hidden" name="id" value={s.id} />
+                  <div class="grid sm:grid-cols-[1fr_auto] gap-2">
+                    <input name="title" value={s.title} required class="border border-warm-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-sage" />
+                    <input name="icon" value={s.icon ?? ''} placeholder="⭐" maxlength="4" class="border border-warm-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-sage w-16 text-center text-lg" />
+                  </div>
+                  <textarea name="description" rows="2" class="border border-warm-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-sage resize-none">{s.description}</textarea>
+                  <div class="flex gap-2">
+                    <button type="submit" class="bg-sage hover:bg-sage-dark text-white px-4 py-1.5 rounded-xl text-xs font-medium transition-colors">Guardar</button>
+                    <button type="submit" form={`del-s-${s.id}`} class="bg-red-50 hover:bg-red-100 text-red-600 px-4 py-1.5 rounded-xl text-xs font-medium transition-colors">Eliminar</button>
+                  </div>
+                </form>
+                <form id={`del-s-${s.id}`} method="POST" class="hidden">
+                  <input type="hidden" name="_action" value="delete" />
+                  <input type="hidden" name="id" value={s.id} />
+                </form>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <button type="submit" class="bg-warm-dark hover:bg-black text-white px-5 py-2 rounded-xl text-sm font-medium transition-colors">
+          Guardar orden
+        </button>
+      </form>
+    </div>
+  )}
 </AdminLayout>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1/Sortable.min.js" is:inline></script>
+<script is:inline>
+  const list = document.getElementById('services-sortable');
+  const idsInput = document.getElementById('services-reorder-ids');
+  if (list && idsInput) {
+    new Sortable(list, {
+      handle: '.drag-handle',
+      animation: 150,
+      onEnd() {
+        const ids = [...list.querySelectorAll('[data-id]')].map(el => el.dataset.id);
+        idsInput.value = JSON.stringify(ids);
+      }
+    });
+  }
+</script>
