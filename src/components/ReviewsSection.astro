@@ -66,11 +66,11 @@ if (GOOGLE_API_KEY) {
 {GOOGLE_API_KEY && allReviews.length > 0 && (
   <section id="resenas" class="bg-cream py-20 px-4">
     <div class="max-w-6xl mx-auto">
-      <div class="text-center mb-12">
+      <div class="text-center mb-10">
         <h2 class="font-heading font-800 text-3xl md:text-4xl text-sage mb-3">Lo que dicen las familias</h2>
 
         <!-- Rating summaries -->
-        <div class="flex flex-wrap justify-center gap-6 mt-6 mb-2">
+        <div class="flex flex-wrap justify-center gap-6 mt-6 mb-6">
           {Object.entries(ratings).map(([name, data]) => (
             <div class="flex items-center gap-2">
               <span class="font-heading font-700 text-warm-dark text-sm">{name}</span>
@@ -80,11 +80,22 @@ if (GOOGLE_API_KEY) {
             </div>
           ))}
         </div>
+
+        <!-- Filter buttons -->
+        <div class="flex flex-wrap justify-center gap-2">
+          <button data-filter="all" class="review-filter px-5 py-2 rounded-full text-sm font-medium border bg-sage text-white border-sage transition-all">Todas</button>
+          {PLACES.map(p => (
+            <button data-filter={p.name} class="review-filter px-5 py-2 rounded-full text-sm font-medium border bg-white text-warm-gray border-warm-border hover:border-sage hover:text-sage transition-all">{p.name}</button>
+          ))}
+        </div>
       </div>
 
       <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        {allReviews.map((review) => (
-          <div class="bg-white rounded-2xl p-5 shadow-sm border border-warm-border flex flex-col gap-3">
+        {allReviews.map((review, i) => (
+          <div
+            class="review-card bg-white rounded-2xl p-5 shadow-sm border border-warm-border flex flex-col gap-3"
+            data-residence={review.residence}
+          >
             <!-- Header -->
             <div class="flex items-center gap-3">
               {review.authorAttribution.photoUri ? (
@@ -111,20 +122,31 @@ if (GOOGLE_API_KEY) {
               {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
             </div>
 
-            <!-- Text -->
+            <!-- Text with expand -->
             {review.text?.text && (
               <div class="flex flex-col gap-2 flex-1">
-                <p class="text-warm-gray text-sm leading-relaxed">
+                <p
+                  class="review-text text-warm-gray text-sm leading-relaxed line-clamp-4"
+                  data-full={review.text.text}
+                >
                   "{review.text.text}"
                 </p>
-                <a
-                  href={`https://www.google.com/maps/place/?q=place_id:${PLACES.find(p => p.name === review.residence)?.id}`}
-                  target="_blank"
-                  rel="noopener"
-                  class="text-sage text-xs font-medium hover:underline self-start"
-                >
-                  Ver en Google Maps →
-                </a>
+                <div class="flex items-center gap-3">
+                  <button
+                    class="review-expand text-sage text-xs font-medium hover:underline self-start"
+                    data-expanded="false"
+                  >
+                    Ver más
+                  </button>
+                  <a
+                    href={`https://www.google.com/maps/place/?q=place_id:${PLACES.find(p => p.name === review.residence)?.id}`}
+                    target="_blank"
+                    rel="noopener"
+                    class="text-warm-gray text-xs hover:underline self-start"
+                  >
+                    Google Maps →
+                  </a>
+                </div>
               </div>
             )}
           </div>
@@ -146,3 +168,39 @@ if (GOOGLE_API_KEY) {
     </div>
   </section>
 )}
+
+<script is:inline>
+  // Filter
+  document.querySelectorAll('.review-filter').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const filter = btn.getAttribute('data-filter');
+      document.querySelectorAll('.review-filter').forEach(b => {
+        b.classList.remove('bg-sage', 'text-white', 'border-sage');
+        b.classList.add('bg-white', 'text-warm-gray', 'border-warm-border');
+      });
+      btn.classList.add('bg-sage', 'text-white', 'border-sage');
+      btn.classList.remove('bg-white', 'text-warm-gray', 'border-warm-border');
+      document.querySelectorAll('.review-card').forEach(card => {
+        const match = filter === 'all' || card.getAttribute('data-residence') === filter;
+        card.style.display = match ? '' : 'none';
+      });
+    });
+  });
+
+  // Expand/collapse
+  document.querySelectorAll('.review-expand').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const p = btn.closest('div').previousElementSibling;
+      const expanded = btn.getAttribute('data-expanded') === 'true';
+      if (expanded) {
+        p.classList.add('line-clamp-4');
+        btn.textContent = 'Ver más';
+        btn.setAttribute('data-expanded', 'false');
+      } else {
+        p.classList.remove('line-clamp-4');
+        btn.textContent = 'Ver menos';
+        btn.setAttribute('data-expanded', 'true');
+      }
+    });
+  });
+</script>

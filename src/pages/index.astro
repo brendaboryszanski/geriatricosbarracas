@@ -11,6 +11,7 @@ import ObjectivesSection from '../components/ObjectivesSection.astro';
 import ReviewsSection from '../components/ReviewsSection.astro';
 import ContactSection from '../components/ContactSection.astro';
 import Footer from '../components/Footer.astro';
+import FloatingButtons from '../components/FloatingButtons.astro';
 import { supabase } from '../lib/supabase';
 
 const [
@@ -57,4 +58,5 @@ const footerText = contactMap.footer_text ?? 'Residencias para adultos mayores';
   <ReviewsSection />
   <ContactSection contact={contact} />
   <Footer text={footerText} />
+  <FloatingButtons />
 </Layout>
