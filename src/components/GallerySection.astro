@@ -101,6 +101,7 @@ const PAGE_SIZE = 12;
               data-title={p.title}
               alt={p.title}
               loading="lazy"
+              decoding="async"
               class="gallery-img w-full object-cover rounded-xl"
               onload="this.previousElementSibling.classList.add('loaded')"
             />

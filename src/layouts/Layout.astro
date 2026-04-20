@@ -53,5 +53,71 @@ const canonicalUrl = new URL(Astro.url.pathname, 'https://geriatricosbarracas.co
       );
       document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale').forEach(el => observer.observe(el));
     </script>
+    <script is:inline>
+      // Fix: anchor scroll can land in the wrong spot because lazy-loaded images
+      // above the target push content down after the initial scroll. We re-align
+      // when pending images finish loading, unless the user has scrolled manually.
+      (function () {
+        let currentHash = '';
+        let userScrolled = false;
+
+        function targetEl() {
+          if (!currentHash) return null;
+          try { return document.querySelector(currentHash); } catch { return null; }
+        }
+
+        function realign(smooth) {
+          const el = targetEl();
+          if (!el || userScrolled) return;
+          el.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' });
+        }
+
+        function watchPendingImages() {
+          const imgs = Array.from(document.images).filter(img => !img.complete);
+          imgs.forEach(img => {
+            const onDone = () => {
+              img.removeEventListener('load', onDone);
+              img.removeEventListener('error', onDone);
+              realign(false);
+            };
+            img.addEventListener('load', onDone);
+            img.addEventListener('error', onDone);
+          });
+        }
+
+        function engage(hash) {
+          currentHash = hash;
+          userScrolled = false;
+          realign(true);
+          watchPendingImages();
+        }
+
+        document.addEventListener('click', (e) => {
+          const a = e.target.closest && e.target.closest('a[href^="#"]');
+          if (!a) return;
+          const href = a.getAttribute('href');
+          if (!href || href === '#') return;
+          const el = document.querySelector(href);
+          if (!el) return;
+          e.preventDefault();
+          if (location.hash !== href) history.pushState(null, '', href);
+          engage(href);
+        });
+
+        ['wheel', 'touchmove', 'keydown'].forEach(evt => {
+          window.addEventListener(evt, () => { userScrolled = true; }, { passive: true });
+        });
+
+        window.addEventListener('load', () => {
+          if (location.hash && location.hash.length > 1) {
+            engage(location.hash);
+          }
+        });
+
+        window.addEventListener('hashchange', () => {
+          if (location.hash) engage(location.hash);
+        });
+      })();
+    </script>
   </body>
 </html>
