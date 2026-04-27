@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import Analytics from '@vercel/analytics/astro';
 
 interface Props {
   title?: string;
@@ -41,6 +42,7 @@ const canonicalUrl = new URL(Astro.url.pathname, 'https://geriatricosbarracas.co
   </head>
   <body class="bg-cream text-warm-dark">
     <slot />
+    <Analytics />
     <script is:inline>
       const observer = new IntersectionObserver(
         (entries) => entries.forEach(e => {
