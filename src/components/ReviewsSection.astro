@@ -1,69 +1,23 @@
 ---
-const GOOGLE_API_KEY = import.meta.env.GOOGLE_PLACES_API_KEY;
+import reviewsData from '../data/reviews.json';
 
-const PLACES = [
-  { id: 'ChIJeUHXc1DLvJURowRnVXIBMf0', name: 'Le-Sa' },
-  { id: 'ChIJ7emZFlPLvJURHUDH-GLvdjM', name: 'Rincón del Sur' },
-];
+const PLACES = reviewsData.places;
+const reviews = reviewsData.reviews;
 
-interface Review {
-  authorAttribution: { displayName: string; photoUri?: string };
-  rating: number;
-  text?: { text: string };
-  relativePublishTimeDescription: string;
-}
-
-interface PlaceResult {
-  name: string;
-  rating: number;
-  userRatingCount: number;
-  reviews: Review[];
-}
-
-let allReviews: Array<Review & { residence: string }> = [];
-let ratings: Record<string, { rating: number; count: number }> = {};
-
-if (GOOGLE_API_KEY) {
-  const results = await Promise.allSettled(
-    PLACES.map(place =>
-      fetch(
-        `https://places.googleapis.com/v1/places/${place.id}?fields=rating,userRatingCount,reviews&languageCode=es`,
-        {
-          headers: {
-            'X-Goog-Api-Key': GOOGLE_API_KEY,
-            'X-Goog-FieldMask': 'rating,userRatingCount,reviews',
-          },
-        }
-      )
-        .then(r => r.json() as Promise<PlaceResult>)
-        .then(data => ({ ...data, placeName: place.name }))
-    )
-  );
-
-  for (const [i, result] of results.entries()) {
-    if (result.status === 'fulfilled') {
-      const data = result.value as PlaceResult & { placeName: string };
-      ratings[PLACES[i].name] = {
-        rating: data.rating ?? 0,
-        count: data.userRatingCount ?? 0,
-      };
-      if (data.reviews) {
-        const withText = data.reviews
-          .filter(r => r.text?.text && r.rating >= 4)
-          .slice(0, 3);
-        allReviews.push(...withText.map(r => ({ ...r, residence: PLACES[i].name })));
-      }
-    }
-  }
-
-  // Sort by rating desc, max 6 total
-  allReviews = allReviews
-    .sort((a, b) => b.rating - a.rating)
-    .slice(0, 6);
+function relativeTimeEs(isoDate: string): string {
+  const then = new Date(isoDate).getTime();
+  const now = Date.now();
+  const days = Math.max(0, Math.floor((now - then) / (1000 * 60 * 60 * 24)));
+  if (days < 14) return 'Hace pocos días';
+  if (days < 60) return `Hace ${Math.round(days / 7)} semanas`;
+  const months = Math.round(days / 30);
+  if (months < 12) return `Hace ${months} ${months === 1 ? 'mes' : 'meses'}`;
+  const years = Math.round(days / 365);
+  return `Hace ${years} ${years === 1 ? 'año' : 'años'}`;
 }
 ---
 
-{GOOGLE_API_KEY && allReviews.length > 0 && (
+{reviews.length > 0 && (
   <section id="resenas" class="bg-cream py-20 px-4">
     <div class="max-w-6xl mx-auto">
       <div class="text-center mb-10">
@@ -71,12 +25,12 @@ if (GOOGLE_API_KEY) {
 
         <!-- Rating summaries -->
         <div class="flex flex-wrap justify-center gap-6 mt-6 mb-6">
-          {Object.entries(ratings).map(([name, data]) => (
+          {PLACES.map(p => (
             <div class="flex items-center gap-2">
-              <span class="font-heading font-700 text-warm-dark text-sm">{name}</span>
-              <span class="text-yellow-400 text-lg">{'★'.repeat(Math.round(data.rating))}</span>
-              <span class="text-sage font-700">{data.rating.toFixed(1)}</span>
-              <span class="text-warm-gray text-xs">({data.count} reseñas)</span>
+              <span class="font-heading font-700 text-warm-dark text-sm">{p.name}</span>
+              <span class="text-yellow-400 text-lg">{'★'.repeat(Math.round(p.rating))}</span>
+              <span class="text-sage font-700">{p.rating.toFixed(1)}</span>
+              <span class="text-warm-gray text-xs">({p.count} reseñas)</span>
             </div>
           ))}
         </div>
@@ -91,28 +45,29 @@ if (GOOGLE_API_KEY) {
       </div>
 
       <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        {allReviews.map((review, i) => (
+        {reviews.map((review) => (
           <div
             class="review-card bg-white rounded-2xl p-5 shadow-sm border border-warm-border flex flex-col gap-3"
             data-residence={review.residence}
           >
             <!-- Header -->
             <div class="flex items-center gap-3">
-              {review.authorAttribution.photoUri ? (
-                <img
-                  src={review.authorAttribution.photoUri}
-                  alt={review.authorAttribution.displayName}
-                  class="w-10 h-10 rounded-full object-cover"
-                  referrerpolicy="no-referrer"
-                />
-              ) : (
-                <div class="w-10 h-10 rounded-full bg-sage/20 flex items-center justify-center text-sage font-heading font-700 text-base">
-                  {review.authorAttribution.displayName?.[0] ?? '?'}
-                </div>
-              )}
+              <div class="review-avatar w-10 h-10 rounded-full bg-sage/20 flex items-center justify-center text-sage font-heading font-700 text-base shrink-0 overflow-hidden">
+                {review.photoUri ? (
+                  <img
+                    src={review.photoUri}
+                    alt={review.displayName}
+                    class="w-full h-full object-cover"
+                    referrerpolicy="no-referrer"
+                    onerror="this.replaceWith(Object.assign(document.createElement('span'),{textContent:this.alt?.[0]??'?'}))"
+                  />
+                ) : (
+                  <span>{review.displayName?.[0] ?? '?'}</span>
+                )}
+              </div>
               <div>
-                <p class="font-medium text-warm-dark text-sm">{review.authorAttribution.displayName}</p>
-                <p class="text-warm-gray text-xs">{review.relativePublishTimeDescription}</p>
+                <p class="font-medium text-warm-dark text-sm">{review.displayName}</p>
+                <p class="text-warm-gray text-xs">{relativeTimeEs(review.publishTime)}</p>
               </div>
               <span class="ml-auto text-xs text-terracotta font-medium">{review.residence}</span>
             </div>
@@ -123,13 +78,13 @@ if (GOOGLE_API_KEY) {
             </div>
 
             <!-- Text with expand -->
-            {review.text?.text && (
+            {review.text && (
               <div class="flex flex-col gap-2 flex-1">
                 <p
                   class="review-text text-warm-gray text-sm leading-relaxed line-clamp-4"
-                  data-full={review.text.text}
+                  data-full={review.text}
                 >
-                  "{review.text.text}"
+                  "{review.text}"
                 </p>
                 <div class="flex items-center gap-3">
                   <button

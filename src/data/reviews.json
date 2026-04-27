@@ -1,0 +1,67 @@
+{
+  "_comment": "Reseñas curadas manualmente desde Google Maps. Para actualizar: ir a la ficha de cada residencia en Google Maps, copiar las reseñas más relevantes acá, y actualizar 'rating' y 'count' en 'places' con los valores actuales.",
+  "places": [
+    {
+      "id": "ChIJeUHXc1DLvJURowRnVXIBMf0",
+      "name": "Le-Sa",
+      "rating": 5.0,
+      "count": 23
+    },
+    {
+      "id": "ChIJ7emZFlPLvJURHUDH-GLvdjM",
+      "name": "Rincón del Sur",
+      "rating": 4.9,
+      "count": 28
+    }
+  ],
+  "reviews": [
+    {
+      "residence": "Rincón del Sur",
+      "rating": 5,
+      "displayName": "Marisol Bordon",
+      "photoUri": "https://lh3.googleusercontent.com/a-/ALV-UjV_cE1qF6L7_MZboFP_Craqi36t8eZakRnb1ETTMeXPBMeRq4va=s128-c0x00000000-cc-rp-mo",
+      "publishTime": "2026-01-15T14:32:53Z",
+      "text": "Gracias a todos él equipo de Rincón del Sur por el cuidado, el cariño y dedicación que le brindaron a mi tía estos último años.\nEl trato que recibió fue impecable, fueron más que cuidadores familia.\nMuchas gracias!!!"
+    },
+    {
+      "residence": "Le-Sa",
+      "rating": 5,
+      "displayName": "Marcela Rebecchi",
+      "photoUri": "https://lh3.googleusercontent.com/a/ACg8ocKhkh4N1gPihLesvAh9zBJCDVq7VeRwox_Baocf7TZbHEegmw=s128-c0x00000000-cc-rp-mo",
+      "publishTime": "2025-01-28T01:48:42Z",
+      "text": "Quiero agradecer a la Lic. Marcela y al Dr. Julio por su dedicación, profesionalismo y el amor que ponen en la tarea de cuidar a nuestros seres queridos. Para mi padre, LE-SA se convirtió en un hogar en el verdadero sentido de la palabra, todas las personas que trabajan allí dan lo mejor de sí mismas. Durante la semana tienen actividades muy interesantes que estimulan su creatividad como música, pintura y actividad física, además de psicología con muy buenos profesionales. La experiencia de mi padre en LE-SA fue muy positiva. Simplemente GRACIAS! Lo recomiendo."
+    },
+    {
+      "residence": "Rincón del Sur",
+      "rating": 5,
+      "displayName": "marcelo palmieri",
+      "photoUri": "https://lh3.googleusercontent.com/a-/ALV-UjXgTxsRAFrZV6R7ghmeaE0F4SeYPG7q5PjSrQy4QgDi3xto1so=s128-c0x00000000-cc-rp-mo-ba4",
+      "publishTime": "2025-12-06T01:19:30Z",
+      "text": "Nunca me voy a olvidar de la excelente atención que tuvo mi mamá casi dos años en la residencia, un lugar impecable!!! Sus dueños y las asistentes que la atendieron como su familia. Yo como hijo tengo un gran recuerdo!!! Fue como su segundo hogar!!! No voy a dejar de ir a visitarlos. Gracias!!!!!"
+    },
+    {
+      "residence": "Le-Sa",
+      "rating": 5,
+      "displayName": "Claudia Elisa Elisiri",
+      "photoUri": "https://lh3.googleusercontent.com/a-/ALV-UjXlaK3S78_8Dvq79wWhtbFrcITib6bkIbTdmJixLDmsMa80cz1Upg=s128-c0x00000000-cc-rp-mo-ba4",
+      "publishTime": "2024-02-16T21:57:58Z",
+      "text": "Mi mamá partió hace un mes. Estuvo en el hogar 6 años. No tengo más que palabras de agradecimiento para el Dr Julio, la Dra Marcela y para el staff de chicas Fabiola, Zulma, Yesica, María por el trato. En primer lugar, Profesional, Responsable, pero lo más importante, Humano. La trataban con tanto cariño, que no me alcanzan las palabras. Los abuelos allí pasan momentos muy hermosos y ellos se encargan de acompañarlos minuto a minuto. Gracias Eternas. Claudia (hija de Raquel)."
+    },
+    {
+      "residence": "Rincón del Sur",
+      "rating": 5,
+      "displayName": "maria ruisoto",
+      "photoUri": "https://lh3.googleusercontent.com/a-/ALV-UjXU9CY-WmFMP-wWuUTPpvnHMq-2TgS_V_WNNwGMJzDckcHNzkyK=s128-c0x00000000-cc-rp-mo",
+      "publishTime": "2025-10-21T11:27:33Z",
+      "text": "Quiero agradecer a los dueños y a las empleadas que con tanto cariño acompañaron a mi mamá (Betty) en su recuperación de reemplazo de caderas. Ella pasó 3 meses y quedó con muy lindos recuerdos y nosotros también!! Además la comida era muy rica, buenas actividades y el patiecito es un recreo para la vista. Gracias Marcela y Rincón del Sur."
+    },
+    {
+      "residence": "Le-Sa",
+      "rating": 5,
+      "displayName": "Ivanna Ginocchio",
+      "photoUri": "https://lh3.googleusercontent.com/a/ACg8ocIR45GzCMGycoZ2_GClmYJ7VOm_FtphtieQYsO1GAfFMaO2Ow=s128-c0x00000000-cc-rp-mo-ba3",
+      "publishTime": "2024-06-06T16:07:44Z",
+      "text": "Voy a estar eternamente agradecida con todo el personal de Le-Sa, desde los directores Julio y Marcela hasta las chicas que en este año y medio de residencia de mi papá lo recibieron, lo cuidaron, lo acompañaron, lo escucharon, y sobre todo lo trataron con muchísimo amor y respeto. Saber que esto fue así hasta su último día en este plano para los que nos quedamos acá no tiene precio. Se fue tranquilo y seguro. Gracias. Ivanna (hija de Oscar)"
+    }
+  ]
+}
