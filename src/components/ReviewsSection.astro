@@ -23,16 +23,10 @@ function relativeTimeEs(isoDate: string): string {
       <div class="text-center mb-10">
         <h2 class="font-heading font-800 text-3xl md:text-4xl text-sage mb-3">Lo que dicen las familias</h2>
 
-        <!-- Rating summaries -->
-        <div class="flex flex-wrap justify-center gap-6 mt-6 mb-6">
-          {PLACES.map(p => (
-            <div class="flex items-center gap-2">
-              <span class="font-heading font-700 text-warm-dark text-sm">{p.name}</span>
-              <span class="text-yellow-400 text-lg">{'★'.repeat(Math.round(p.rating))}</span>
-              <span class="text-sage font-700">{p.rating.toFixed(1)}</span>
-              <span class="text-warm-gray text-xs">({p.count} reseñas)</span>
-            </div>
-          ))}
+        <!-- Rating summary -->
+        <div class="flex flex-col items-center gap-2 mt-6 mb-6">
+          <div class="text-yellow-400 text-2xl tracking-wider">★★★★★</div>
+          <p class="text-warm-gray text-sm">Más de 50 familias compartieron su experiencia en Google</p>
         </div>
 
         <!-- Filter buttons -->

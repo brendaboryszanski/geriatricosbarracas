@@ -1,18 +1,8 @@
 {
-  "_comment": "Reseñas curadas manualmente desde Google Maps. Para actualizar: ir a la ficha de cada residencia en Google Maps, copiar las reseñas más relevantes acá, y actualizar 'rating' y 'count' en 'places' con los valores actuales.",
+  "_comment": "Reseñas curadas manualmente desde Google Maps. Para actualizar: ir a la ficha de cada residencia en Google Maps y copiar las reseñas más relevantes acá.",
   "places": [
-    {
-      "id": "ChIJeUHXc1DLvJURowRnVXIBMf0",
-      "name": "Le-Sa",
-      "rating": 5.0,
-      "count": 23
-    },
-    {
-      "id": "ChIJ7emZFlPLvJURHUDH-GLvdjM",
-      "name": "Rincón del Sur",
-      "rating": 4.9,
-      "count": 28
-    }
+    { "id": "ChIJeUHXc1DLvJURowRnVXIBMf0", "name": "Le-Sa" },
+    { "id": "ChIJ7emZFlPLvJURHUDH-GLvdjM", "name": "Rincón del Sur" }
   ],
   "reviews": [
     {
